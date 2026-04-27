@@ -32,6 +32,9 @@ jobs:
       - name: Create local.properties
         run: echo "sdk.dir=${ANDROID_HOME}" > local.properties
 
+      - name: Ensure Gradle wrapper is executable
+        run: chmod +x gradlew
+
       - name: Build debug APK
         env:
           GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
