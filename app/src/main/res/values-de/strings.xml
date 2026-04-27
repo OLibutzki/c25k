@@ -1,0 +1,47 @@
+<resources>
+    <string name="app_name">C25K Coach</string>
+    <string name="next_workout">Nächstes Training</string>
+    <string name="start_workout">Training starten</string>
+    <string name="history">Verlauf</string>
+    <string name="settings">Einstellungen</string>
+    <string name="language">Sprache</string>
+    <string name="english">Englisch</string>
+    <string name="german">Deutsch</string>
+    <string name="live_workout">Live-Training</string>
+    <string name="pause">Pause</string>
+    <string name="resume">Fortsetzen</string>
+    <string name="stop">Stop</string>
+    <string name="running">Laufen</string>
+    <string name="walking">Gehen</string>
+    <string name="elapsed">Vergangen</string>
+    <string name="remaining">Verbleibend</string>
+    <string name="distance">Distanz</string>
+    <string name="pace">Tempo</string>
+    <string name="week_day_format">Woche %1$d, Tag %2$d</string>
+    <string name="no_workouts_yet">Noch keine Trainings.</string>
+    <string name="workout_complete">Training abgeschlossen</string>
+    <string name="notification_channel_name">Trainingsführung</string>
+    <string name="notification_channel_desc">Intervallansagen und Trainingsfortschritt</string>
+    <string name="notification_title">C25K Training aktiv</string>
+    <string name="notification_text">Geführtes Training läuft</string>
+    <string name="tts_start_running">Lauf jetzt für %1$s.</string>
+    <string name="tts_start_walking">Geh jetzt für %1$s.</string>
+    <string name="tts_prepare_running">In 10 Sekunden laufen.</string>
+    <string name="tts_prepare_walking">In 10 Sekunden gehen.</string>
+    <string name="tts_workout_complete">Training abgeschlossen. Gute Arbeit.</string>
+    <string name="tts_language_missing">Gewählte Sprachausgabe nicht verfügbar. Tonsignal wird genutzt.</string>
+    <string name="refresh">Aktualisieren</string>
+    <string name="back">Zurück</string>
+    <string name="avg_pace_label">Durchschnittstempo:</string>
+    <string name="run_pace_label">Lauftempo:</string>
+    <string name="walk_pace_label">Gehtempo:</string>
+    <string name="loading">Lädt...</string>
+    <plurals name="duration_minutes">
+        <item quantity="one">%d Minute</item>
+        <item quantity="other">%d Minuten</item>
+    </plurals>
+    <plurals name="duration_seconds">
+        <item quantity="one">%d Sekunde</item>
+        <item quantity="other">%d Sekunden</item>
+    </plurals>
+</resources>
