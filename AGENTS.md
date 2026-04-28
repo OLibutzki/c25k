@@ -13,6 +13,10 @@
 - Pause/resume/stop controls (in app + notification).
 - GPS capture per point and per-segment stats (run/walk pace split).
 - History + workout detail screen with colored route overlays (run/walk).
+- First screen shows the full 9-week training plan plus a compact summary.
+- Plan sessions can be `PENDING`, `COMPLETED`, or `SKIPPED`.
+- Skipped sessions remain visible and can be started later; completed sessions can be started again.
+- Each plan session shows its latest completion date; repeated runs create additional history entries.
 - Local-only persistence (Room), no backend.
 
 ## Key Files
@@ -30,6 +34,7 @@
 - Android SDK setup script:
   - `./scripts/setup_android_sdk.sh`
 - SDK path is written to `local.properties` (machine-specific; do not commit blindly).
+- `assembleDebug` may fail inside the sandbox with `Could not determine a usable wildcard IP for this machine`; rerun outside the sandbox if that happens.
 
 ## Verified Commands
 - Build: `GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleDebug`
@@ -43,6 +48,7 @@
 - No cloud sync/export in v1.
 - Pace unit currently shown as `min/km`.
 - Language switches apply to UI and subsequent TTS cues.
+- Room currently uses destructive migration fallback; schema changes discard existing local data unless explicit migrations are added later.
 
 ## Recommended Next Steps
 - Add instrumentation tests for service background behavior + location mocking.
