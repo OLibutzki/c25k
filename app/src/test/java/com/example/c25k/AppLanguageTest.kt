@@ -6,9 +6,10 @@ import org.junit.Test
 
 class AppLanguageTest {
     @Test
-    fun `fromTag parses known tags and defaults to english`() {
+    fun `fromTag parses known tags and defaults to system`() {
+        assertEquals(AppLanguage.SYSTEM, AppLanguage.fromTag("system"))
         assertEquals(AppLanguage.EN, AppLanguage.fromTag("en"))
         assertEquals(AppLanguage.DE, AppLanguage.fromTag("de"))
-        assertEquals(AppLanguage.EN, AppLanguage.fromTag("unknown"))
+        assertEquals(AppLanguage.SYSTEM, AppLanguage.fromTag("unknown"))
     }
 }

@@ -16,7 +16,7 @@ class LanguageRepository(private val context: Context) {
 
     fun observeLanguage(): Flow<AppLanguage> {
         return context.dataStore.data.map { prefs ->
-            AppLanguage.fromTag(prefs[key] ?: AppLanguage.EN.tag)
+            AppLanguage.fromTag(prefs[key] ?: AppLanguage.SYSTEM.tag)
         }
     }
 

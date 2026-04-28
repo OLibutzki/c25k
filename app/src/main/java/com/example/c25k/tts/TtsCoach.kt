@@ -10,7 +10,7 @@ import java.util.Locale
 class TtsCoach(private val context: Context) : TextToSpeech.OnInitListener {
     private var tts: TextToSpeech? = null
     private var initialized = false
-    private var language: AppLanguage = AppLanguage.EN
+    private var language: AppLanguage = AppLanguage.SYSTEM
 
     init {
         tts = TextToSpeech(context, this)
@@ -45,6 +45,7 @@ class TtsCoach(private val context: Context) : TextToSpeech.OnInitListener {
     private fun applyLanguage(language: AppLanguage) {
         val engine = tts ?: return
         val locale = when (language) {
+            AppLanguage.SYSTEM -> Locale.getDefault()
             AppLanguage.EN -> Locale.ENGLISH
             AppLanguage.DE -> Locale.GERMAN
         }

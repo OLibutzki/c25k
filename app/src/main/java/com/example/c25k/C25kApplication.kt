@@ -29,6 +29,10 @@ class C25kApplication : Application() {
     }
 
     fun applyLocale(language: AppLanguage) {
-        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language.tag))
+        val locales = when (language) {
+            AppLanguage.SYSTEM -> LocaleListCompat.getEmptyLocaleList()
+            else -> LocaleListCompat.forLanguageTags(language.tag)
+        }
+        AppCompatDelegate.setApplicationLocales(locales)
     }
 }

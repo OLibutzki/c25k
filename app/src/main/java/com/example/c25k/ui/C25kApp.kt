@@ -348,7 +348,7 @@ private fun SettingsScreen(
     onBack: () -> Unit,
     onLanguageChanged: (AppLanguage) -> Unit
 ) {
-    val language by container.languageRepository.observeLanguage().collectAsStateWithLifecycle(initialValue = AppLanguage.EN)
+    val language by container.languageRepository.observeLanguage().collectAsStateWithLifecycle(initialValue = AppLanguage.SYSTEM)
 
     Scaffold { padding ->
         Column(
@@ -361,6 +361,12 @@ private fun SettingsScreen(
             Button(onClick = onBack) { Text(stringResource(R.string.back)) }
             Text(stringResource(R.string.settings), style = MaterialTheme.typography.titleLarge)
             Text(stringResource(R.string.language))
+            Button(onClick = { onLanguageChanged(AppLanguage.SYSTEM) }) {
+                Text(
+                    if (language == AppLanguage.SYSTEM) "${stringResource(R.string.system)} ✓"
+                    else stringResource(R.string.system)
+                )
+            }
             Button(onClick = { onLanguageChanged(AppLanguage.EN) }) {
                 Text(
                     if (language == AppLanguage.EN) "${stringResource(R.string.english)} ✓"

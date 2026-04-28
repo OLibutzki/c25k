@@ -6,11 +6,12 @@ enum class SegmentType {
 }
 
 enum class AppLanguage(val tag: String) {
+    SYSTEM("system"),
     EN("en"),
     DE("de");
 
     companion object {
-        fun fromTag(tag: String): AppLanguage = entries.firstOrNull { it.tag == tag } ?: EN
+        fun fromTag(tag: String): AppLanguage = entries.firstOrNull { it.tag == tag } ?: SYSTEM
     }
 }
 
