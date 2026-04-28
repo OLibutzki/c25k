@@ -37,6 +37,16 @@
     <string name="run_pace_label">Lauftempo:</string>
     <string name="walk_pace_label">Gehtempo:</string>
     <string name="loading">Lädt...</string>
+    <string name="training_plan">Trainingsplan</string>
+    <string name="latest_finished_run">Zuletzt abgeschlossen</string>
+    <string name="status_up_next">Als Nächstes</string>
+    <string name="status_pending">Offen</string>
+    <string name="status_completed">Abgeschlossen</string>
+    <string name="status_skipped">Übersprungen</string>
+    <string name="start_again">Erneut starten</string>
+    <string name="skip_run">Überspringen</string>
+    <string name="completed_on">Abgeschlossen am %1$s</string>
+    <string name="plan_session_summary">Laufen %1$s | Gesamt %2$s</string>
     <plurals name="duration_minutes">
         <item quantity="one">%d Minute</item>
         <item quantity="other">%d Minuten</item>

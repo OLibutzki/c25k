@@ -233,7 +233,7 @@ class WorkoutForegroundService : Service() {
                 points = pointCaptures.toList()
             )
             val workoutId = app.container.workoutRepository.persistWorkout(request)
-            app.container.planRepository.markComplete(session.id, workoutId)
+            app.container.planRepository.markComplete(session.id, workoutId, request.completedAtEpochMs)
             stopWorkout(markComplete = true)
         }
     }

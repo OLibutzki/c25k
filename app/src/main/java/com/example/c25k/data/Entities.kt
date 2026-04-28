@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.example.c25k.domain.PlanSessionStatus
 import com.example.c25k.domain.SegmentType
 
 @Entity(tableName = "plan_sessions")
@@ -12,7 +13,9 @@ data class PlanSessionEntity(
     val week: Int,
     val day: Int,
     val orderInPlan: Int,
-    val completedWorkoutId: Long? = null
+    val status: PlanSessionStatus = PlanSessionStatus.PENDING,
+    val latestCompletedWorkoutId: Long? = null,
+    val latestCompletedAtEpochMs: Long? = null
 )
 
 @Entity(

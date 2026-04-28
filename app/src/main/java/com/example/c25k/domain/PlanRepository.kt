@@ -15,22 +15,12 @@ class PlanRepository(private val planDao: PlanDao) {
                     week = session.week,
                     day = session.day,
                     segments = segments,
-                    completedWorkoutId = session.completedWorkoutId
+                    status = session.status,
+                    latestCompletedWorkoutId = session.latestCompletedWorkoutId,
+                    latestCompletedAtEpochMs = session.latestCompletedAtEpochMs
                 )
             }
         }
-    }
-
-    suspend fun getNextSession(): PlanSessionModel? {
-        val session = planDao.getNextSession() ?: return null
-        val segments = planDao.getSegmentsForSession(session.id).map { it.toModel() }
-        return PlanSessionModel(
-            id = session.id,
-            week = session.week,
-            day = session.day,
-            segments = segments,
-            completedWorkoutId = session.completedWorkoutId
-        )
     }
 
     suspend fun getSession(id: Long): PlanSessionModel? {
@@ -41,12 +31,25 @@ class PlanRepository(private val planDao: PlanDao) {
             week = session.week,
             day = session.day,
             segments = segments,
-            completedWorkoutId = session.completedWorkoutId
+            status = session.status,
+            latestCompletedWorkoutId = session.latestCompletedWorkoutId,
+            latestCompletedAtEpochMs = session.latestCompletedAtEpochMs
         )
     }
 
-    suspend fun markComplete(sessionId: Long, workoutId: Long) {
-        planDao.markSessionComplete(sessionId, workoutId)
+    suspend fun markComplete(sessionId: Long, workoutId: Long, completedAtEpochMs: Long) {
+        planDao.updateCompletion(
+            sessionId = sessionId,
+            status = PlanSessionStatus.COMPLETED,
+            workoutId = workoutId,
+            completedAtEpochMs = completedAtEpochMs
+        )
+    }
+
+    suspend fun markSkipped(sessionId: Long) {
+        val session = planDao.getSession(sessionId) ?: return
+        if (session.status == PlanSessionStatus.COMPLETED) return
+        planDao.updateStatus(sessionId, PlanSessionStatus.SKIPPED)
     }
 }
 

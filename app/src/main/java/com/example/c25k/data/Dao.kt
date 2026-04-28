@@ -3,6 +3,7 @@ package com.example.c25k.data
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import com.example.c25k.domain.PlanSessionStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -19,7 +20,7 @@ interface PlanDao {
     @Query("SELECT * FROM plan_sessions ORDER BY orderInPlan")
     fun observeSessions(): Flow<List<PlanSessionEntity>>
 
-    @Query("SELECT * FROM plan_sessions WHERE completedWorkoutId IS NULL ORDER BY orderInPlan LIMIT 1")
+    @Query("SELECT * FROM plan_sessions WHERE status = 'PENDING' ORDER BY orderInPlan LIMIT 1")
     suspend fun getNextSession(): PlanSessionEntity?
 
     @Query("SELECT * FROM plan_sessions WHERE id = :id")
@@ -28,8 +29,24 @@ interface PlanDao {
     @Query("SELECT * FROM plan_segments WHERE sessionId = :sessionId ORDER BY segmentOrder")
     suspend fun getSegmentsForSession(sessionId: Long): List<PlanSegmentEntity>
 
-    @Query("UPDATE plan_sessions SET completedWorkoutId = :workoutId WHERE id = :sessionId")
-    suspend fun markSessionComplete(sessionId: Long, workoutId: Long)
+    @Query(
+        """
+        UPDATE plan_sessions
+        SET status = :status,
+            latestCompletedWorkoutId = :workoutId,
+            latestCompletedAtEpochMs = :completedAtEpochMs
+        WHERE id = :sessionId
+        """
+    )
+    suspend fun updateCompletion(
+        sessionId: Long,
+        status: PlanSessionStatus,
+        workoutId: Long,
+        completedAtEpochMs: Long
+    )
+
+    @Query("UPDATE plan_sessions SET status = :status WHERE id = :sessionId")
+    suspend fun updateStatus(sessionId: Long, status: PlanSessionStatus)
 }
 
 @Dao

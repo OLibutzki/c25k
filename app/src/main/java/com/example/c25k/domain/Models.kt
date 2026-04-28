@@ -5,6 +5,12 @@ enum class SegmentType {
     WALK
 }
 
+enum class PlanSessionStatus {
+    PENDING,
+    COMPLETED,
+    SKIPPED
+}
+
 enum class AppLanguage(val tag: String) {
     SYSTEM("system"),
     EN("en"),
@@ -26,7 +32,9 @@ data class PlanSessionModel(
     val week: Int,
     val day: Int,
     val segments: List<PlanSegmentModel>,
-    val completedWorkoutId: Long?
+    val status: PlanSessionStatus,
+    val latestCompletedWorkoutId: Long?,
+    val latestCompletedAtEpochMs: Long?
 )
 
 data class WorkoutSummary(
@@ -54,3 +62,10 @@ data class TrackPointModel(
     val speedMps: Float,
     val segmentType: SegmentType
 )
+
+fun List<PlanSessionModel>.nextSuggestedSession(): PlanSessionModel? =
+    firstOrNull { it.status == PlanSessionStatus.PENDING }
+
+fun List<PlanSessionModel>.latestCompletedSession(): PlanSessionModel? =
+    filter { it.status == PlanSessionStatus.COMPLETED && it.latestCompletedAtEpochMs != null }
+        .maxByOrNull { it.latestCompletedAtEpochMs ?: Long.MIN_VALUE }
