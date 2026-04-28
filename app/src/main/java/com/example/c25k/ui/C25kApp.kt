@@ -8,11 +8,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,20 +25,35 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,6 +76,7 @@ import com.example.c25k.domain.latestCompletedSession
 import com.example.c25k.domain.nextSuggestedSession
 import com.example.c25k.service.WorkoutPhase
 import com.example.c25k.service.WorkoutRuntime
+import com.example.c25k.ui.theme.C25kTheme
 import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
@@ -66,53 +86,64 @@ import kotlin.math.roundToInt
 
 @Composable
 fun C25kApp(container: AppContainer, application: C25kApplication) {
-    val navController = rememberNavController()
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    C25kTheme {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            val navController = rememberNavController()
+            val context = LocalContext.current
+            val scope = rememberCoroutineScope()
 
-    NavHost(
-        navController = navController,
-        startDestination = "home"
-    ) {
-        composable("home") {
-            HomeScreen(
-                container = container,
-                onOpenHistory = { navController.navigate("history") },
-                onOpenSettings = { navController.navigate("settings") },
-                onStartWorkout = { sessionId ->
-                    WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_START, sessionId)
-                    navController.navigate("live")
+            NavHost(
+                navController = navController,
+                startDestination = "home"
+            ) {
+                composable("home") {
+                    HomeScreen(
+                        container = container,
+                        onOpenHistory = { navController.navigate("history") },
+                        onOpenSettings = { navController.navigate("settings") },
+                        onStartWorkout = { sessionId ->
+                            WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_START, sessionId)
+                            navController.navigate("live")
+                        }
+                    )
                 }
-            )
-        }
-        composable("live") {
-            LiveWorkoutScreen(onDone = { navController.navigate("home") })
-        }
-        composable("history") {
-            HistoryScreen(
-                container = container,
-                onBack = { navController.popBackStack() },
-                onWorkoutClick = { workoutId -> navController.navigate("detail/$workoutId") }
-            )
-        }
-        composable(
-            route = "detail/{workoutId}",
-            arguments = listOf(navArgument("workoutId") { type = NavType.LongType })
-        ) { entry ->
-            val workoutId = entry.arguments?.getLong("workoutId") ?: return@composable
-            WorkoutDetailScreen(container = container, workoutId = workoutId, onBack = { navController.popBackStack() })
-        }
-        composable("settings") {
-            SettingsScreen(
-                container = container,
-                onBack = { navController.popBackStack() },
-                onLanguageChanged = { language ->
-                    scope.launch {
-                        container.languageRepository.setLanguage(language)
-                        application.applyLocale(language)
-                    }
+                composable("live") {
+                    LiveWorkoutScreen(onDone = { navController.navigate("home") })
                 }
-            )
+                composable("history") {
+                    HistoryScreen(
+                        container = container,
+                        onBack = { navController.popBackStack() },
+                        onWorkoutClick = { workoutId -> navController.navigate("detail/$workoutId") }
+                    )
+                }
+                composable(
+                    route = "detail/{workoutId}",
+                    arguments = listOf(navArgument("workoutId") { type = NavType.LongType })
+                ) { entry ->
+                    val workoutId = entry.arguments?.getLong("workoutId") ?: return@composable
+                    WorkoutDetailScreen(
+                        container = container,
+                        workoutId = workoutId,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+                composable("settings") {
+                    SettingsScreen(
+                        container = container,
+                        onBack = { navController.popBackStack() },
+                        onLanguageChanged = { language ->
+                            scope.launch {
+                                container.languageRepository.setLanguage(language)
+                                application.applyLocale(language)
+                            }
+                        }
+                    )
+                }
+            }
         }
     }
 }
@@ -124,33 +155,46 @@ private fun HomeScreen(
     onOpenSettings: () -> Unit,
     onStartWorkout: (Long) -> Unit
 ) {
-    val sessions by container.planRepository.observeAllSessions().collectAsStateWithLifecycle(initialValue = emptyList())
+    val sessions by container.planRepository.observeAllSessions()
+        .collectAsStateWithLifecycle(initialValue = emptyList())
     val scope = rememberCoroutineScope()
     val nextSession = sessions.nextSuggestedSession()
     val latestCompleted = sessions.latestCompletedSession()
+    val completedCount = sessions.count { it.status == PlanSessionStatus.COMPLETED }
 
-    Scaffold { padding ->
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+    ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(padding),
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                Text(stringResource(R.string.next_workout), style = MaterialTheme.typography.titleLarge)
+                HomeHeroCard(
+                    nextSession = nextSession,
+                    latestCompleted = latestCompleted,
+                    completedCount = completedCount,
+                    totalCount = sessions.size,
+                    onOpenHistory = onOpenHistory,
+                    onOpenSettings = onOpenSettings,
+                    onStartWorkout = nextSession?.let { { onStartWorkout(it.id) } }
+                )
             }
             item {
-                HomeSummaryCard(nextSession = nextSession, latestCompleted = latestCompleted)
+                PlanOverviewCard(
+                    sessions = sessions,
+                    latestCompleted = latestCompleted
+                )
             }
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = onOpenHistory) { Text(stringResource(R.string.history)) }
-                    Button(onClick = onOpenSettings) { Text(stringResource(R.string.settings)) }
-                }
-            }
-            item {
-                Text(stringResource(R.string.training_plan), style = MaterialTheme.typography.titleLarge)
+                SectionHeader(
+                    title = stringResource(R.string.training_plan),
+                    subtitle = stringResource(R.string.training_plan_subtitle)
+                )
             }
             items(items = sessions, key = { it.id }) { session ->
                 PlanSessionCard(
@@ -164,37 +208,216 @@ private fun HomeScreen(
                     }
                 )
             }
+            item {
+                Spacer(modifier = Modifier.navigationBarsPadding())
+            }
         }
     }
 }
 
 @Composable
-private fun HomeSummaryCard(nextSession: PlanSessionModel?, latestCompleted: PlanSessionModel?) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stringResource(R.string.next_workout), style = MaterialTheme.typography.titleMedium)
-                if (nextSession == null) {
-                    Text(stringResource(R.string.workout_complete))
-                } else {
-                    Text(stringResource(R.string.week_day_format, nextSession.week, nextSession.day))
-                    Text(planStatusLabel(session = nextSession, isNext = true), color = planStatusColor(nextSession.status, true))
-                }
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stringResource(R.string.latest_finished_run), style = MaterialTheme.typography.titleMedium)
-                if (latestCompleted == null || latestCompleted.latestCompletedAtEpochMs == null) {
-                    Text(stringResource(R.string.no_workouts_yet))
-                } else {
-                    Text(stringResource(R.string.week_day_format, latestCompleted.week, latestCompleted.day))
-                    Text(
-                        stringResource(
-                            R.string.completed_on,
-                            formatDate(latestCompleted.latestCompletedAtEpochMs)
+private fun HomeHeroCard(
+    nextSession: PlanSessionModel?,
+    latestCompleted: PlanSessionModel?,
+    completedCount: Int,
+    totalCount: Int,
+    onOpenHistory: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onStartWorkout: (() -> Unit)?
+) {
+    val headline = if (nextSession == null) {
+        stringResource(R.string.workout_complete)
+    } else {
+        stringResource(R.string.week_day_format, nextSession.week, nextSession.day)
+    }
+
+    ElevatedCard(
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.Transparent),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Box(
+            modifier = Modifier
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.secondary
                         )
                     )
+                )
+                .padding(20.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    StatusBadge(
+                        label = stringResource(R.string.app_name),
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f),
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Text(
+                        text = stringResource(R.string.home_tagline),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = headline,
+                        style = MaterialTheme.typography.displaySmall,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.sessions_completed_count,
+                            completedCount,
+                            totalCount
+                        ),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    HeroMetric(
+                        label = stringResource(R.string.next_workout),
+                        value = if (nextSession == null) {
+                            stringResource(R.string.status_completed)
+                        } else {
+                            planStatusLabel(session = nextSession, isNext = true)
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                    HeroMetric(
+                        label = stringResource(R.string.latest_finished_run),
+                        value = latestCompleted?.latestCompletedAtEpochMs?.let(::formatDate)
+                            ?: stringResource(R.string.no_workouts_yet),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                if (onStartWorkout != null) {
+                    Button(
+                        onClick = onStartWorkout,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.start_workout))
+                    }
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    FilledTonalButton(onClick = onOpenHistory, modifier = Modifier.weight(1f)) {
+                        Text(stringResource(R.string.history))
+                    }
+                    OutlinedButton(onClick = onOpenSettings, modifier = Modifier.weight(1f)) {
+                        Text(stringResource(R.string.settings))
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun HeroMetric(label: String, value: String, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.13f),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.82f)
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimary,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlanOverviewCard(
+    sessions: List<PlanSessionModel>,
+    latestCompleted: PlanSessionModel?
+) {
+    val totalRunMinutes = sessions.sumOf { session ->
+        session.segments.filter { it.type == SegmentType.RUN }.sumOf { it.durationSec }
+    } / 60
+    val completedCount = sessions.count { it.status == PlanSessionStatus.COMPLETED }
+    val progress = if (sessions.isEmpty()) 0f else completedCount.toFloat() / sessions.size.toFloat()
+
+    AppCard {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            SectionHeader(
+                title = stringResource(R.string.plan_overview),
+                subtitle = stringResource(R.string.plan_overview_subtitle)
+            )
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
+                    .clip(RoundedCornerShape(999.dp))
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                SummaryMetric(
+                    label = stringResource(R.string.training_plan),
+                    value = stringResource(R.string.sessions_completed_count, completedCount, sessions.size),
+                    modifier = Modifier.weight(1f)
+                )
+                SummaryMetric(
+                    label = stringResource(R.string.running),
+                    value = stringResource(R.string.total_run_minutes, totalRunMinutes),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            latestCompleted?.latestCompletedAtEpochMs?.let {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Text(
+                    text = stringResource(R.string.completed_on, formatDate(it)),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SummaryMetric(label: String, value: String, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
@@ -207,25 +430,52 @@ private fun PlanSessionCard(
     onSkip: () -> Unit
 ) {
     val context = LocalContext.current
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                stringResource(R.string.week_day_format, session.week, session.day),
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(planStatusLabel(session = session, isNext = isNext), color = planStatusColor(session.status, isNext))
-            Text(
-                stringResource(
-                    R.string.plan_session_summary,
-                    formatDurationWords(context, session.segments.filter { it.type == SegmentType.RUN }.sumOf { it.durationSec }),
-                    formatDurationWords(context, session.segments.sumOf { it.durationSec })
+    val statusColor = planStatusColor(session.status, isNext)
+    val runDuration = session.segments.filter { it.type == SegmentType.RUN }.sumOf { it.durationSec }
+    val totalDuration = session.segments.sumOf { it.durationSec }
+
+    AppCard {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = stringResource(R.string.week_day_format, session.week, session.day),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.plan_session_summary,
+                            formatDurationWords(context, runDuration),
+                            formatDurationWords(context, totalDuration)
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                StatusBadge(
+                    label = planStatusLabel(session = session, isNext = isNext),
+                    color = statusColor.copy(alpha = 0.14f),
+                    contentColor = statusColor
                 )
-            )
-            if (session.status == PlanSessionStatus.COMPLETED && session.latestCompletedAtEpochMs != null) {
-                Text(stringResource(R.string.completed_on, formatDate(session.latestCompletedAtEpochMs)))
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onStartWorkout) {
+
+            SessionSegmentPreview(session = session)
+
+            if (session.status == PlanSessionStatus.COMPLETED && session.latestCompletedAtEpochMs != null) {
+                Text(
+                    text = stringResource(R.string.completed_on, formatDate(session.latestCompletedAtEpochMs)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Button(onClick = onStartWorkout, modifier = Modifier.weight(1f)) {
                     Text(
                         stringResource(
                             if (session.status == PlanSessionStatus.COMPLETED) R.string.start_again
@@ -234,7 +484,54 @@ private fun PlanSessionCard(
                     )
                 }
                 if (session.status == PlanSessionStatus.PENDING) {
-                    Button(onClick = onSkip) { Text(stringResource(R.string.skip_run)) }
+                    OutlinedButton(onClick = onSkip, modifier = Modifier.weight(1f)) {
+                        Text(stringResource(R.string.skip_run))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SessionSegmentPreview(session: PlanSessionModel) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        session.segments.take(4).forEach { segment ->
+            Surface(
+                modifier = Modifier.weight(1f),
+                color = if (segment.type == SegmentType.RUN) {
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                } else {
+                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.08f)
+                },
+                shape = MaterialTheme.shapes.small
+            ) {
+                Column(
+                    modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (segment.type == SegmentType.RUN) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.secondary
+                                }
+                            )
+                    )
+                    Text(
+                        text = segmentTypeLabel(segment.type),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                    Text(
+                        text = formatShortDuration(segment.durationSec),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
@@ -246,52 +543,107 @@ private fun LiveWorkoutScreen(onDone: () -> Unit) {
     val state by WorkoutRuntime.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    Scaffold { padding ->
+    AppScaffold(title = stringResource(R.string.live_workout)) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(padding),
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                Text(stringResource(R.string.live_workout), style = MaterialTheme.typography.titleLarge)
-            }
-            item {
-                Card {
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Text(
-                            when (state.currentSegmentType) {
-                                SegmentType.RUN -> stringResource(R.string.running)
-                                SegmentType.WALK -> stringResource(R.string.walking)
-                                null -> "-"
-                            },
-                            style = MaterialTheme.typography.headlineMedium
-                        )
-                        state.week?.let { week ->
-                            state.day?.let { day ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(
-                                    stringResource(R.string.week_day_format, week, day),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    text = when (state.currentSegmentType) {
+                                        SegmentType.RUN -> stringResource(R.string.running)
+                                        SegmentType.WALK -> stringResource(R.string.walking)
+                                        null -> "-"
+                                    },
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.Bold
                                 )
+                                state.week?.let { week ->
+                                    state.day?.let { day ->
+                                        Text(
+                                            text = stringResource(R.string.week_day_format, week, day),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
                             }
+                            StatusBadge(
+                                label = state.phase.name,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                contentColor = MaterialTheme.colorScheme.primary
+                            )
                         }
-                        Text("${stringResource(R.string.remaining)}: ${formatClock(state.segmentRemainingSec.toLong())}")
-                        Text("${stringResource(R.string.elapsed)}: ${formatClock(state.elapsedSec)}")
-                        Text("${stringResource(R.string.distance)}: ${"%.2f".format(state.totalDistanceMeters / 1000.0)} km")
-                        Text("${stringResource(R.string.pace)}: ${formatPace(state.currentPaceSecPerKm)}")
-                        Text("${stringResource(R.string.run_pace_label)} ${formatPace(state.runPaceSecPerKm)}")
-                        Text("${stringResource(R.string.walk_pace_label)} ${formatPace(state.walkPaceSecPerKm)}")
+
+                        Text(
+                            text = formatClock(state.segmentRemainingSec.toLong()),
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = stringResource(R.string.remaining),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            MetricTile(
+                                label = stringResource(R.string.elapsed),
+                                value = formatClock(state.elapsedSec),
+                                modifier = Modifier.weight(1f)
+                            )
+                            MetricTile(
+                                label = stringResource(R.string.distance),
+                                value = "${"%.2f".format(state.totalDistanceMeters / 1000.0)} km",
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            MetricTile(
+                                label = stringResource(R.string.run_pace_label),
+                                value = formatPace(state.runPaceSecPerKm),
+                                modifier = Modifier.weight(1f)
+                            )
+                            MetricTile(
+                                label = stringResource(R.string.walk_pace_label),
+                                value = formatPace(state.walkPaceSecPerKm),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
             }
             if (state.segments.isNotEmpty()) {
                 item {
-                    Text(stringResource(R.string.phase_timeline), style = MaterialTheme.typography.titleMedium)
+                    SectionHeader(
+                        title = stringResource(R.string.phase_timeline),
+                        subtitle = stringResource(R.string.workout_metrics_subtitle)
+                    )
                 }
                 items(state.segments, key = { it.segmentOrder }) { segment ->
                     val timelineStatus = when {
@@ -317,29 +669,43 @@ private fun LiveWorkoutScreen(onDone: () -> Unit) {
                 }
             }
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     if (state.phase == WorkoutPhase.RUNNING) {
-                        Button(onClick = { WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_PAUSE) }) {
+                        Button(
+                            onClick = { WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_PAUSE) },
+                            modifier = Modifier.weight(1f)
+                        ) {
                             Text(stringResource(R.string.pause))
                         }
                     }
                     if (state.phase == WorkoutPhase.PAUSED) {
-                        Button(onClick = { WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_RESUME) }) {
+                        FilledTonalButton(
+                            onClick = { WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_RESUME) },
+                            modifier = Modifier.weight(1f)
+                        ) {
                             Text(stringResource(R.string.resume))
                         }
                     }
-                    Button(onClick = {
-                        WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_STOP)
-                        onDone()
-                    }) {
+                    OutlinedButton(
+                        onClick = {
+                            WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_STOP)
+                            onDone()
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Text(stringResource(R.string.stop))
                     }
                 }
             }
             if (state.phase == WorkoutPhase.COMPLETED || state.phase == WorkoutPhase.IDLE) {
                 item {
-                    Button(onClick = onDone) { Text(stringResource(R.string.history)) }
+                    Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.history))
+                    }
                 }
+            }
+            item {
+                Spacer(modifier = Modifier.navigationBarsPadding())
             }
         }
     }
@@ -370,68 +736,54 @@ private fun PhaseTimelineItem(
         PhaseTimelineStatus.CURRENT -> stringResource(R.string.phase_current)
         PhaseTimelineStatus.UPCOMING -> stringResource(R.string.phase_up_next)
     }
-    val phaseLabel = stringResource(R.string.phase_label, segmentNumber)
 
-    Card {
+    AppCard {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .width(20.dp)
-                    .height(72.dp)
+                    .width(18.dp)
+                    .height(78.dp),
+                contentAlignment = Alignment.CenterStart
             ) {
                 Box(
                     modifier = Modifier
                         .width(6.dp)
-                        .height(72.dp)
-                        .padding(top = 12.dp, bottom = 12.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = RoundedCornerShape(999.dp)
-                        )
+                        .height(78.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
                 Box(
                     modifier = Modifier
                         .width(6.dp)
-                        .height((48f * progress).dp)
-                        .padding(top = 12.dp)
-                        .background(
-                            color = accentColor,
-                            shape = RoundedCornerShape(999.dp)
-                        )
-                )
-                Box(
-                    modifier = Modifier
-                        .padding(top = 26.dp)
-                        .size(14.dp)
-                        .background(accentColor, CircleShape)
+                        .height((78f * progress).dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(accentColor)
+                        .align(Alignment.BottomStart)
                 )
             }
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    "$phaseLabel • ${segmentTypeLabel(segmentType)}",
-                    style = MaterialTheme.typography.titleSmall
+                    text = stringResource(R.string.phase_label, segmentNumber),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    statusLabel,
-                    color = accentColor,
-                    style = MaterialTheme.typography.labelLarge
+                    text = segmentTypeLabel(segmentType),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    formatDurationWords(context, durationSec),
+                    text = formatDurationWords(context, durationSec),
                     style = MaterialTheme.typography.bodyMedium
                 )
-                if (status == PhaseTimelineStatus.CURRENT) {
-                    Text(
-                        "${stringResource(R.string.phase_progress_label)} ${formatPercent(progress)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                StatusBadge(
+                    label = statusLabel,
+                    color = accentColor.copy(alpha = 0.14f),
+                    contentColor = accentColor
+                )
             }
         }
     }
@@ -445,34 +797,29 @@ private fun HistoryScreen(
 ) {
     val items by container.workoutRepository.observeHistory().collectAsStateWithLifecycle(initialValue = emptyList())
 
-    Scaffold { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
-        ) {
-            Button(onClick = onBack) { Text(stringResource(R.string.back)) }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(stringResource(R.string.history), style = MaterialTheme.typography.titleLarge)
-            Spacer(modifier = Modifier.height(8.dp))
-            if (items.isEmpty()) {
-                Text(stringResource(R.string.no_workouts_yet))
-            } else {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(items) { item ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onWorkoutClick(item.id) }
-                        ) {
-                            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(formatDate(item.startedAtEpochMs))
-                                Text("${"%.2f".format(item.distanceMeters / 1000.0)} km")
-                                Text("${stringResource(R.string.avg_pace_label)} ${formatPace(item.avgPaceSecPerKm)}")
-                            }
-                        }
-                    }
+    AppScaffold(title = stringResource(R.string.history), onBack = onBack) { padding ->
+        if (items.isEmpty()) {
+            EmptyState(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(20.dp),
+                title = stringResource(R.string.history),
+                message = stringResource(R.string.no_workouts_yet)
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(items, key = { it.id }) { item ->
+                    WorkoutHistoryCard(item = item, onClick = { onWorkoutClick(item.id) })
+                }
+                item {
+                    Spacer(modifier = Modifier.navigationBarsPadding())
                 }
             }
         }
@@ -480,33 +827,131 @@ private fun HistoryScreen(
 }
 
 @Composable
-private fun WorkoutDetailScreen(container: AppContainer, workoutId: Long, onBack: () -> Unit) {
+private fun WorkoutHistoryCard(item: WorkoutSummary, onClick: () -> Unit) {
+    AppCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                text = formatDate(item.startedAtEpochMs),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                SummaryMetric(
+                    label = stringResource(R.string.distance),
+                    value = "${"%.2f".format(item.distanceMeters / 1000.0)} km",
+                    modifier = Modifier.weight(1f)
+                )
+                SummaryMetric(
+                    label = stringResource(R.string.avg_pace_label),
+                    value = formatPace(item.avgPaceSecPerKm),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WorkoutDetailScreen(
+    container: AppContainer,
+    workoutId: Long,
+    onBack: () -> Unit
+) {
     val detail by produceState<WorkoutDetail?>(initialValue = null, workoutId) {
         value = container.workoutRepository.getWorkoutDetail(workoutId)
     }
 
-    Scaffold { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Button(onClick = onBack) { Text(stringResource(R.string.back)) }
-            if (detail == null) {
-                Text(stringResource(R.string.loading))
-            } else {
-                Text(formatDate(detail!!.workout.startedAtEpochMs), style = MaterialTheme.typography.titleLarge)
-                Text("${"%.2f".format(detail!!.workout.distanceMeters / 1000.0)} km")
-                Text("${stringResource(R.string.avg_pace_label)} ${formatPace(detail!!.workout.avgPaceSecPerKm)}")
-                Spacer(modifier = Modifier.height(8.dp))
-                RouteMap(points = detail!!.points)
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    items(detail!!.segments) { seg ->
-                        Text("${seg.type.name}: ${formatPace(seg.paceSecPerKm)} | ${"%.2f".format(seg.distanceMeters / 1000.0)} km")
+    AppScaffold(title = stringResource(R.string.history), onBack = onBack) { padding ->
+        if (detail == null) {
+            EmptyState(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(20.dp),
+                title = stringResource(R.string.loading),
+                message = stringResource(R.string.workout_metrics_subtitle)
+            )
+        } else {
+            val current = detail!!
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
+                    AppCard {
+                        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                            Text(
+                                text = formatDate(current.workout.startedAtEpochMs),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                SummaryMetric(
+                                    label = stringResource(R.string.distance),
+                                    value = "${"%.2f".format(current.workout.distanceMeters / 1000.0)} km",
+                                    modifier = Modifier.weight(1f)
+                                )
+                                SummaryMetric(
+                                    label = stringResource(R.string.avg_pace_label),
+                                    value = formatPace(current.workout.avgPaceSecPerKm),
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
                     }
+                }
+                item {
+                    AppCard {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            SectionHeader(
+                                title = stringResource(R.string.route_map),
+                                subtitle = stringResource(R.string.route_map_subtitle)
+                            )
+                            RouteMap(points = current.points)
+                        }
+                    }
+                }
+                item {
+                    SectionHeader(
+                        title = stringResource(R.string.session_breakdown),
+                        subtitle = stringResource(R.string.session_breakdown_subtitle)
+                    )
+                }
+                items(current.segments) { seg ->
+                    AppCard {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    text = segmentTypeLabel(seg.type),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = formatPace(seg.paceSecPerKm),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            StatusBadge(
+                                label = "${"%.2f".format(seg.distanceMeters / 1000.0)} km",
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+                item {
+                    Spacer(modifier = Modifier.navigationBarsPadding())
                 }
             }
         }
@@ -516,6 +961,8 @@ private fun WorkoutDetailScreen(container: AppContainer, workoutId: Long, onBack
 @Composable
 private fun RouteMap(points: List<TrackPointModel>) {
     val context = LocalContext.current
+    val runColor = MaterialTheme.colorScheme.primary.toArgb()
+    val walkColor = MaterialTheme.colorScheme.secondary.toArgb()
     val mapView = remember {
         Configuration.getInstance().userAgentValue = context.packageName
         MapView(context).apply {
@@ -527,7 +974,8 @@ private fun RouteMap(points: List<TrackPointModel>) {
     AndroidView(
         modifier = Modifier
             .fillMaxWidth()
-            .height(260.dp),
+            .height(260.dp)
+            .clip(MaterialTheme.shapes.medium),
         factory = { mapView },
         update = { view ->
             view.overlays.clear()
@@ -539,7 +987,7 @@ private fun RouteMap(points: List<TrackPointModel>) {
             if (runPoints.size >= 2) {
                 val runLine = Polyline().apply {
                     setPoints(runPoints)
-                    outlinePaint.color = 0xFFE53935.toInt()
+                    outlinePaint.color = runColor
                     outlinePaint.strokeWidth = 8f
                 }
                 view.overlays.add(runLine)
@@ -547,7 +995,7 @@ private fun RouteMap(points: List<TrackPointModel>) {
             if (walkPoints.size >= 2) {
                 val walkLine = Polyline().apply {
                     setPoints(walkPoints)
-                    outlinePaint.color = 0xFF1E88E5.toInt()
+                    outlinePaint.color = walkColor
                     outlinePaint.strokeWidth = 8f
                 }
                 view.overlays.add(walkLine)
@@ -573,39 +1021,228 @@ private fun SettingsScreen(
     onBack: () -> Unit,
     onLanguageChanged: (AppLanguage) -> Unit
 ) {
-    val language by container.languageRepository.observeLanguage().collectAsStateWithLifecycle(initialValue = AppLanguage.SYSTEM)
+    val language by container.languageRepository.observeLanguage()
+        .collectAsStateWithLifecycle(initialValue = AppLanguage.SYSTEM)
 
-    Scaffold { padding ->
-        Column(
+    AppScaffold(title = stringResource(R.string.settings), onBack = onBack) { padding ->
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(padding),
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Button(onClick = onBack) { Text(stringResource(R.string.back)) }
-            Text(stringResource(R.string.settings), style = MaterialTheme.typography.titleLarge)
-            Text(stringResource(R.string.language))
-            Button(onClick = { onLanguageChanged(AppLanguage.SYSTEM) }) {
-                Text(
-                    if (language == AppLanguage.SYSTEM) "${stringResource(R.string.system)} ✓"
-                    else stringResource(R.string.system)
-                )
+            item {
+                AppCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        SectionHeader(
+                            title = stringResource(R.string.language),
+                            subtitle = stringResource(R.string.language_subtitle)
+                        )
+                        LanguageOption(
+                            title = stringResource(R.string.system),
+                            selected = language == AppLanguage.SYSTEM,
+                            onClick = { onLanguageChanged(AppLanguage.SYSTEM) }
+                        )
+                        LanguageOption(
+                            title = stringResource(R.string.english),
+                            selected = language == AppLanguage.EN,
+                            onClick = { onLanguageChanged(AppLanguage.EN) }
+                        )
+                        LanguageOption(
+                            title = stringResource(R.string.german),
+                            selected = language == AppLanguage.DE,
+                            onClick = { onLanguageChanged(AppLanguage.DE) }
+                        )
+                    }
+                }
             }
-            Button(onClick = { onLanguageChanged(AppLanguage.EN) }) {
-                Text(
-                    if (language == AppLanguage.EN) "${stringResource(R.string.english)} ✓"
-                    else stringResource(R.string.english)
-                )
-            }
-            Button(onClick = { onLanguageChanged(AppLanguage.DE) }) {
-                Text(
-                    if (language == AppLanguage.DE) "${stringResource(R.string.german)} ✓"
-                    else stringResource(R.string.german)
-                )
+            item {
+                Spacer(modifier = Modifier.navigationBarsPadding())
             }
         }
     }
+}
+
+@Composable
+private fun LanguageOption(
+    title: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        color = if (selected) {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f)
+        },
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = title, style = MaterialTheme.typography.titleMedium)
+            StatusBadge(
+                label = if (selected) stringResource(R.string.selected) else stringResource(R.string.available),
+                color = if (selected) {
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                } else {
+                    MaterialTheme.colorScheme.surface
+                },
+                contentColor = if (selected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun AppCard(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    ElevatedCard(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            content = content
+        )
+    }
+}
+
+@Composable
+private fun MetricTile(label: String, value: String, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+@Composable
+private fun EmptyState(
+    modifier: Modifier = Modifier,
+    title: String,
+    message: String
+) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String, subtitle: String? = null) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold
+        )
+        if (subtitle != null) {
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatusBadge(
+    label: String,
+    color: Color,
+    contentColor: Color
+) {
+    Surface(
+        color = color,
+        contentColor = contentColor,
+        shape = RoundedCornerShape(999.dp)
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AppScaffold(
+    title: String,
+    onBack: (() -> Unit)? = null,
+    content: @Composable (PaddingValues) -> Unit
+) {
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                navigationIcon = {
+                    if (onBack != null) {
+                        TextButton(onClick = onBack) {
+                            Text(stringResource(R.string.back))
+                        }
+                    }
+                }
+            )
+        },
+        content = content
+    )
 }
 
 @Composable
@@ -650,8 +1287,6 @@ private fun formatClock(totalSec: Long): String {
     return "%02d:%02d".format(min, sec)
 }
 
-private fun formatPercent(value: Float): String = "${(value * 100).roundToInt()}%"
-
 private fun formatDate(epochMs: Long): String {
     val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm")
     val calendar = Calendar.getInstance().apply { timeInMillis = epochMs }
@@ -669,5 +1304,15 @@ private fun formatDurationWords(context: Context, totalSec: Int): String {
         }
         minutes > 0 -> context.resources.getQuantityString(R.plurals.duration_minutes, minutes, minutes)
         else -> context.resources.getQuantityString(R.plurals.duration_seconds, seconds, seconds)
+    }
+}
+
+private fun formatShortDuration(totalSec: Int): String {
+    val minutes = totalSec / 60
+    val seconds = totalSec % 60
+    return if (minutes > 0) {
+        "${minutes}m"
+    } else {
+        "${seconds}s"
     }
 }
