@@ -47,6 +47,12 @@
     <string name="skip_run">Skip</string>
     <string name="completed_on">Completed on %1$s</string>
     <string name="plan_session_summary">Run %1$s | Total %2$s</string>
+    <string name="phase_timeline">Phase progress</string>
+    <string name="phase_label">Phase %1$d</string>
+    <string name="phase_current">Current</string>
+    <string name="phase_completed">Completed</string>
+    <string name="phase_up_next">Up next</string>
+    <string name="phase_progress_label">Phase progress:</string>
     <plurals name="duration_minutes">
         <item quantity="one">%d minute</item>
         <item quantity="other">%d minutes</item>

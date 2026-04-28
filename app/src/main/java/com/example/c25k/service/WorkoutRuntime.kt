@@ -2,6 +2,7 @@ package com.example.c25k.service
 
 import android.content.Context
 import android.content.Intent
+import com.example.c25k.domain.PlanSegmentModel
 import com.example.c25k.domain.SegmentType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,7 @@ data class WorkoutState(
     val sessionId: Long? = null,
     val week: Int? = null,
     val day: Int? = null,
+    val segments: List<PlanSegmentModel> = emptyList(),
     val currentSegmentType: SegmentType? = null,
     val currentSegmentOrder: Int = 0,
     val segmentRemainingSec: Int = 0,

@@ -263,6 +263,7 @@ class WorkoutForegroundService : Service() {
                 sessionId = planSession?.id,
                 week = planSession?.week,
                 day = planSession?.day,
+                segments = planSession?.segments.orEmpty(),
                 currentSegmentType = currentType(),
                 currentSegmentOrder = currentSegmentOrder,
                 segmentRemainingSec = remainingSec.coerceAtLeast(0),

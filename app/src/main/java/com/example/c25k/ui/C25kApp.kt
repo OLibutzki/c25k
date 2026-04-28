@@ -3,8 +3,10 @@ package com.example.c25k.ui
 import android.content.Context
 import android.icu.text.SimpleDateFormat
 import android.icu.util.Calendar
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,8 +14,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -241,50 +247,191 @@ private fun LiveWorkoutScreen(onDone: () -> Unit) {
     val context = LocalContext.current
 
     Scaffold { padding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(stringResource(R.string.live_workout), style = MaterialTheme.typography.titleLarge)
-            Text(
-                when (state.currentSegmentType) {
-                    SegmentType.RUN -> stringResource(R.string.running)
-                    SegmentType.WALK -> stringResource(R.string.walking)
-                    null -> "-"
-                },
-                style = MaterialTheme.typography.headlineMedium
-            )
-            Text("${stringResource(R.string.remaining)}: ${formatClock(state.segmentRemainingSec.toLong())}")
-            Text("${stringResource(R.string.elapsed)}: ${formatClock(state.elapsedSec)}")
-            Text("${stringResource(R.string.distance)}: ${"%.2f".format(state.totalDistanceMeters / 1000.0)} km")
-            Text("${stringResource(R.string.pace)}: ${formatPace(state.currentPaceSecPerKm)}")
-            Text("${stringResource(R.string.run_pace_label)} ${formatPace(state.runPaceSecPerKm)}")
-            Text("${stringResource(R.string.walk_pace_label)} ${formatPace(state.walkPaceSecPerKm)}")
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (state.phase == WorkoutPhase.RUNNING) {
-                    Button(onClick = { WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_PAUSE) }) {
-                        Text(stringResource(R.string.pause))
+            item {
+                Text(stringResource(R.string.live_workout), style = MaterialTheme.typography.titleLarge)
+            }
+            item {
+                Card {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            when (state.currentSegmentType) {
+                                SegmentType.RUN -> stringResource(R.string.running)
+                                SegmentType.WALK -> stringResource(R.string.walking)
+                                null -> "-"
+                            },
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                        state.week?.let { week ->
+                            state.day?.let { day ->
+                                Text(
+                                    stringResource(R.string.week_day_format, week, day),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Text("${stringResource(R.string.remaining)}: ${formatClock(state.segmentRemainingSec.toLong())}")
+                        Text("${stringResource(R.string.elapsed)}: ${formatClock(state.elapsedSec)}")
+                        Text("${stringResource(R.string.distance)}: ${"%.2f".format(state.totalDistanceMeters / 1000.0)} km")
+                        Text("${stringResource(R.string.pace)}: ${formatPace(state.currentPaceSecPerKm)}")
+                        Text("${stringResource(R.string.run_pace_label)} ${formatPace(state.runPaceSecPerKm)}")
+                        Text("${stringResource(R.string.walk_pace_label)} ${formatPace(state.walkPaceSecPerKm)}")
                     }
-                }
-                if (state.phase == WorkoutPhase.PAUSED) {
-                    Button(onClick = { WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_RESUME) }) {
-                        Text(stringResource(R.string.resume))
-                    }
-                }
-                Button(onClick = {
-                    WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_STOP)
-                    onDone()
-                }) {
-                    Text(stringResource(R.string.stop))
                 }
             }
-
+            if (state.segments.isNotEmpty()) {
+                item {
+                    Text(stringResource(R.string.phase_timeline), style = MaterialTheme.typography.titleMedium)
+                }
+                items(state.segments, key = { it.segmentOrder }) { segment ->
+                    val timelineStatus = when {
+                        segment.segmentOrder < state.currentSegmentOrder -> PhaseTimelineStatus.COMPLETED
+                        segment.segmentOrder == state.currentSegmentOrder -> PhaseTimelineStatus.CURRENT
+                        else -> PhaseTimelineStatus.UPCOMING
+                    }
+                    val progress = if (timelineStatus == PhaseTimelineStatus.CURRENT && segment.durationSec > 0) {
+                        ((segment.durationSec - state.segmentRemainingSec).toFloat() / segment.durationSec.toFloat())
+                            .coerceIn(0f, 1f)
+                    } else if (timelineStatus == PhaseTimelineStatus.COMPLETED) {
+                        1f
+                    } else {
+                        0f
+                    }
+                    PhaseTimelineItem(
+                        segmentNumber = segment.segmentOrder + 1,
+                        segmentType = segment.type,
+                        durationSec = segment.durationSec,
+                        status = timelineStatus,
+                        progress = progress
+                    )
+                }
+            }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (state.phase == WorkoutPhase.RUNNING) {
+                        Button(onClick = { WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_PAUSE) }) {
+                            Text(stringResource(R.string.pause))
+                        }
+                    }
+                    if (state.phase == WorkoutPhase.PAUSED) {
+                        Button(onClick = { WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_RESUME) }) {
+                            Text(stringResource(R.string.resume))
+                        }
+                    }
+                    Button(onClick = {
+                        WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_STOP)
+                        onDone()
+                    }) {
+                        Text(stringResource(R.string.stop))
+                    }
+                }
+            }
             if (state.phase == WorkoutPhase.COMPLETED || state.phase == WorkoutPhase.IDLE) {
-                Button(onClick = onDone) { Text(stringResource(R.string.history)) }
+                item {
+                    Button(onClick = onDone) { Text(stringResource(R.string.history)) }
+                }
+            }
+        }
+    }
+}
+
+private enum class PhaseTimelineStatus {
+    COMPLETED,
+    CURRENT,
+    UPCOMING
+}
+
+@Composable
+private fun PhaseTimelineItem(
+    segmentNumber: Int,
+    segmentType: SegmentType,
+    durationSec: Int,
+    status: PhaseTimelineStatus,
+    progress: Float
+) {
+    val context = LocalContext.current
+    val accentColor = when (status) {
+        PhaseTimelineStatus.COMPLETED -> MaterialTheme.colorScheme.tertiary
+        PhaseTimelineStatus.CURRENT -> MaterialTheme.colorScheme.primary
+        PhaseTimelineStatus.UPCOMING -> MaterialTheme.colorScheme.outline
+    }
+    val statusLabel = when (status) {
+        PhaseTimelineStatus.COMPLETED -> stringResource(R.string.phase_completed)
+        PhaseTimelineStatus.CURRENT -> stringResource(R.string.phase_current)
+        PhaseTimelineStatus.UPCOMING -> stringResource(R.string.phase_up_next)
+    }
+    val phaseLabel = stringResource(R.string.phase_label, segmentNumber)
+
+    Card {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(20.dp)
+                    .height(72.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(6.dp)
+                        .height(72.dp)
+                        .padding(top = 12.dp, bottom = 12.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            shape = RoundedCornerShape(999.dp)
+                        )
+                )
+                Box(
+                    modifier = Modifier
+                        .width(6.dp)
+                        .height((48f * progress).dp)
+                        .padding(top = 12.dp)
+                        .background(
+                            color = accentColor,
+                            shape = RoundedCornerShape(999.dp)
+                        )
+                )
+                Box(
+                    modifier = Modifier
+                        .padding(top = 26.dp)
+                        .size(14.dp)
+                        .background(accentColor, CircleShape)
+                )
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    "$phaseLabel • ${segmentTypeLabel(segmentType)}",
+                    style = MaterialTheme.typography.titleSmall
+                )
+                Text(
+                    statusLabel,
+                    color = accentColor,
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Text(
+                    formatDurationWords(context, durationSec),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                if (status == PhaseTimelineStatus.CURRENT) {
+                    Text(
+                        "${stringResource(R.string.phase_progress_label)} ${formatPercent(progress)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
@@ -489,11 +636,21 @@ private fun formatPace(secPerKm: Double?): String {
     return "%d:%02d /km".format(min, sec)
 }
 
+@Composable
+private fun segmentTypeLabel(type: SegmentType): String {
+    return when (type) {
+        SegmentType.RUN -> stringResource(R.string.running)
+        SegmentType.WALK -> stringResource(R.string.walking)
+    }
+}
+
 private fun formatClock(totalSec: Long): String {
     val min = totalSec / 60
     val sec = totalSec % 60
     return "%02d:%02d".format(min, sec)
 }
+
+private fun formatPercent(value: Float): String = "${(value * 100).roundToInt()}%"
 
 private fun formatDate(epochMs: Long): String {
     val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm")
