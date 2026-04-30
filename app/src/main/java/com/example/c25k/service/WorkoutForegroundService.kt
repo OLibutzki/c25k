@@ -32,7 +32,7 @@ import kotlinx.coroutines.launch
 
 class WorkoutForegroundService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val channelId = "workout_guidance"
+    private val channelId = "workout_guidance_silent"
     private val notificationId = 101
 
     private lateinit var ttsCoach: TtsCoach
@@ -320,6 +320,9 @@ class WorkoutForegroundService : Service() {
             .setContentText(getString(R.string.notification_text))
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setSilent(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setContentIntent(activityPendingIntent())
             .addAction(pauseResumeAction)
             .addAction(stopAction)
@@ -351,9 +354,11 @@ class WorkoutForegroundService : Service() {
         val channel = NotificationChannel(
             channelId,
             getString(R.string.notification_channel_name),
-            NotificationManager.IMPORTANCE_HIGH
+            NotificationManager.IMPORTANCE_LOW
         ).apply {
             description = getString(R.string.notification_channel_desc)
+            enableVibration(false)
+            setSound(null, null)
         }
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(channel)
