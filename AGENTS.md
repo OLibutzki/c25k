@@ -10,6 +10,7 @@
 ## What Is Implemented
 - Foreground workout service with lock-screen/pocket-safe interval guidance.
 - TTS cues include interval duration (e.g. "Start running for X minutes").
+- Warm-up and cooldown are configurable per phase, default to 5 minutes, can be disabled, appear as explicit `WARMUP`/`COOLDOWN` segments in the UI, and are excluded from route tracking and pace calculations.
 - Pause/resume/stop controls (in app + notification).
 - GPS capture per point and per-segment stats (run/walk pace split).
 - History + workout detail screen with colored route overlays (run/walk).
@@ -25,6 +26,7 @@
 - Service runtime: `app/src/main/java/com/example/c25k/service/WorkoutForegroundService.kt`
 - UI screens: `app/src/main/java/com/example/c25k/ui/C25kApp.kt`
 - Persistence: `app/src/main/java/com/example/c25k/data/*`
+- Warm-up/cooldown setting: `app/src/main/java/com/example/c25k/settings/WarmupCooldownRepository.kt`
 - Localization: `app/src/main/res/values/strings.xml`, `app/src/main/res/values-de/strings.xml`
 
 ## Environment/Build Notes (CLI Only)
