@@ -9,6 +9,7 @@ import com.example.c25k.domain.TransactionRunner
 import com.example.c25k.domain.WorkoutRepository
 import com.example.c25k.location.LocationTracker
 import com.example.c25k.settings.LanguageRepository
+import com.example.c25k.settings.WarmupCooldownRepository
 import com.example.c25k.settings.WorkoutDebugRepository
 import com.example.c25k.tts.CueFormatter
 
@@ -18,6 +19,7 @@ class AppContainer(context: Context) {
     private val transactionRunner = TransactionRunner { block -> database.withTransaction { block() } }
 
     val languageRepository = LanguageRepository(context)
+    val warmupCooldownRepository = WarmupCooldownRepository(context)
     val workoutDebugRepository = WorkoutDebugRepository(context)
     val planRepository = PlanRepository(planDao)
     val workoutRepository = WorkoutRepository(

@@ -19,10 +19,13 @@ import com.example.c25k.domain.PlanSessionModel
 import com.example.c25k.domain.SegmentStats
 import com.example.c25k.domain.SegmentType
 import com.example.c25k.domain.TrackPointCapture
+import com.example.c25k.domain.isTrackedSegment
+import com.example.c25k.domain.trackedSegmentIndex
 import com.example.c25k.domain.WorkoutMath
 import com.example.c25k.domain.WorkoutDebugMode
 import com.example.c25k.domain.WorkoutPersistRequest
 import com.example.c25k.domain.withDurationsDividedBy
+import com.example.c25k.domain.withWarmupCooldownDuration
 import com.example.c25k.tts.TtsCoach
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -103,7 +106,11 @@ class WorkoutForegroundService : Service() {
             } else {
                 WorkoutDebugMode.OFF
             }
-            resetRuntime(session.withDurationsDividedBy(debugMode.durationDivisor))
+            val warmupCooldownDurationSec = app.container.warmupCooldownRepository.getDurationSec()
+            resetRuntime(
+                session.withWarmupCooldownDuration(warmupCooldownDurationSec)
+                    .withDurationsDividedBy(debugMode.durationDivisor)
+            )
             speakTransitionCue()
             startTimerLoop()
             startLocationLoop()
@@ -139,7 +146,9 @@ class WorkoutForegroundService : Service() {
 
                 delay(1000L)
                 elapsedSec += 1
-                if (currentType() == SegmentType.RUN) runDurationSec += 1 else walkDurationSec += 1
+                if (currentSegmentTracked()) {
+                    if (currentType() == SegmentType.RUN) runDurationSec += 1 else walkDurationSec += 1
+                }
 
                 if (remainingSec == 10 && hasNextSegment()) {
                     announcePrepareCue()
@@ -174,6 +183,12 @@ class WorkoutForegroundService : Service() {
 
     private fun handleLocation(location: Location) {
         if (location.accuracy > 50f) return
+        if (!currentSegmentTracked()) {
+            lastLocation = null
+            publishState(if (paused) WorkoutPhase.PAUSED else WorkoutPhase.RUNNING)
+            return
+        }
+
         val prev = lastLocation
         if (prev != null) {
             val delta = prev.distanceTo(location).toDouble()
@@ -185,9 +200,10 @@ class WorkoutForegroundService : Service() {
             }
         }
         lastLocation = location
+        val trackedSegmentOrder = planSession?.trackedSegmentIndex(currentSegmentOrder) ?: return
 
         pointCaptures += TrackPointCapture(
-            segmentOrder = currentSegmentOrder,
+            segmentOrder = trackedSegmentOrder,
             latitude = location.latitude,
             longitude = location.longitude,
             timestampEpochMs = location.time,
@@ -217,7 +233,9 @@ class WorkoutForegroundService : Service() {
             val session = planSession ?: return@launch
             ttsCoach.speak(app.container.cueFormatter.completeCue())
 
-            val segments = session.segments.map { segment ->
+            val segments = session.segments
+                .filter { session.isTrackedSegment(it.segmentOrder) }
+                .map { segment ->
                 val startSec = session.segments.take(segment.segmentOrder).sumOf { it.durationSec }.toLong()
                 val endSec = startSec + segment.durationSec
                 val distance = segmentDistances[segment.segmentOrder] ?: 0.0
@@ -230,13 +248,14 @@ class WorkoutForegroundService : Service() {
                     paceSecPerKm = WorkoutMath.paceSecPerKm(distance, segment.durationSec.toLong())
                 )
             }
+            val trackedElapsedSec = runDurationSec + walkDurationSec
 
             val request = WorkoutPersistRequest(
                 sessionId = session.id,
                 startedAtEpochMs = startedAtEpochMs,
                 completedAtEpochMs = System.currentTimeMillis(),
                 distanceMeters = totalDistanceMeters,
-                avgPaceSecPerKm = WorkoutMath.paceSecPerKm(totalDistanceMeters, elapsedSec),
+                avgPaceSecPerKm = WorkoutMath.paceSecPerKm(totalDistanceMeters, trackedElapsedSec),
                 segments = segments,
                 points = pointCaptures.toList()
             )
@@ -262,7 +281,11 @@ class WorkoutForegroundService : Service() {
     private fun publishState(phase: WorkoutPhase) {
         val runPace = WorkoutMath.paceSecPerKm(runDistanceMeters, runDurationSec)
         val walkPace = WorkoutMath.paceSecPerKm(walkDistanceMeters, walkDurationSec)
-        val currentPace = if (currentType() == SegmentType.RUN) runPace else walkPace
+        val currentPace = if (currentSegmentTracked()) {
+            if (currentType() == SegmentType.RUN) runPace else walkPace
+        } else {
+            null
+        }
 
         WorkoutRuntime.updateState(
             WorkoutState(
@@ -379,6 +402,10 @@ class WorkoutForegroundService : Service() {
 
     private fun currentDuration(): Int {
         return planSession?.segments?.getOrNull(currentSegmentOrder)?.durationSec ?: 0
+    }
+
+    private fun currentSegmentTracked(): Boolean {
+        return planSession?.isTrackedSegment(currentSegmentOrder) == true
     }
 
     private fun hasNextSegment(): Boolean {

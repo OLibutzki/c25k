@@ -2,7 +2,9 @@ package com.example.c25k.domain
 
 enum class SegmentType {
     RUN,
-    WALK
+    WALK,
+    WARMUP,
+    COOLDOWN
 }
 
 enum class PlanSessionStatus {
@@ -32,10 +34,14 @@ enum class WorkoutDebugMode(val tag: String, val durationDivisor: Int) {
     }
 }
 
+const val DEFAULT_WARMUP_COOLDOWN_DURATION_SEC = 5 * 60
+const val MAX_WARMUP_COOLDOWN_DURATION_SEC = 15 * 60
+
 data class PlanSegmentModel(
     val segmentOrder: Int,
     val type: SegmentType,
-    val durationSec: Int
+    val durationSec: Int,
+    val countsTowardWorkout: Boolean = true
 )
 
 data class PlanSessionModel(
@@ -91,4 +97,48 @@ fun PlanSessionModel.withDurationsDividedBy(divisor: Int): PlanSessionModel {
             segment.copy(durationSec = maxOf(1, (segment.durationSec + divisor - 1) / divisor))
         }
     )
+}
+
+fun PlanSessionModel.withWarmupCooldownDuration(durationSec: Int): PlanSessionModel {
+    if (segments.isEmpty()) return this
+    val normalizedDurationSec = durationSec.coerceIn(0, MAX_WARMUP_COOLDOWN_DURATION_SEC)
+    val adjustedSegments = buildList {
+        if (normalizedDurationSec > 0) {
+            add(
+                PlanSegmentModel(
+                    segmentOrder = -1,
+                    type = SegmentType.WARMUP,
+                    durationSec = normalizedDurationSec,
+                    countsTowardWorkout = false
+                )
+            )
+        }
+        addAll(segments.map { it.copy(countsTowardWorkout = true) })
+        if (normalizedDurationSec > 0) {
+            add(
+                PlanSegmentModel(
+                    segmentOrder = -1,
+                    type = SegmentType.COOLDOWN,
+                    durationSec = normalizedDurationSec,
+                    countsTowardWorkout = false
+                )
+            )
+        }
+    }
+
+    return copy(
+        segments = adjustedSegments.mapIndexed { index, segment ->
+            segment.copy(segmentOrder = index)
+        }
+    )
+}
+
+fun PlanSessionModel.isTrackedSegment(segmentOrder: Int): Boolean {
+    return segments.firstOrNull { it.segmentOrder == segmentOrder }?.countsTowardWorkout == true
+}
+
+fun PlanSessionModel.trackedSegmentIndex(segmentOrder: Int): Int? {
+    if (!isTrackedSegment(segmentOrder)) return null
+    return segments
+        .count { it.segmentOrder < segmentOrder && it.countsTowardWorkout }
 }

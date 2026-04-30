@@ -14,6 +14,8 @@
     <string name="stop">Stop</string>
     <string name="running">Laufen</string>
     <string name="walking">Gehen</string>
+    <string name="warmup">Aufwärmen</string>
+    <string name="cooldown">Cooldown</string>
     <string name="elapsed">Vergangen</string>
     <string name="remaining">Verbleibend</string>
     <string name="distance">Distanz</string>
@@ -27,8 +29,12 @@
     <string name="notification_text">Geführtes Training läuft</string>
     <string name="tts_start_running">Lauf jetzt für %1$s.</string>
     <string name="tts_start_walking">Geh jetzt für %1$s.</string>
+    <string name="tts_start_warmup">Starte deinen Aufwärm-Gehabschnitt für %1$s.</string>
+    <string name="tts_start_cooldown">Starte deinen Cooldown-Gehabschnitt für %1$s.</string>
     <string name="tts_prepare_running">In 10 Sekunden laufen.</string>
     <string name="tts_prepare_walking">In 10 Sekunden gehen.</string>
+    <string name="tts_prepare_warmup">In 10 Sekunden beginnt das Aufwärmen.</string>
+    <string name="tts_prepare_cooldown">In 10 Sekunden beginnt der Cooldown.</string>
     <string name="tts_workout_complete">Training abgeschlossen. Gute Arbeit.</string>
     <string name="tts_language_missing">Gewählte Sprachausgabe nicht verfügbar. Tonsignal wird genutzt.</string>
     <string name="refresh">Aktualisieren</string>
@@ -66,6 +72,12 @@
     <string name="session_breakdown">Einheitenaufschlüsselung</string>
     <string name="session_breakdown_subtitle">Jeder aufgezeichnete Abschnitt mit Tempo und Distanz.</string>
     <string name="language_subtitle">Wähle die Sprache für Oberfläche und künftige Sprachansagen.</string>
+    <string name="warmup_cooldown">Aufwärmen und Cooldown</string>
+    <string name="warmup_cooldown_subtitle">Passe den Gehabschnitt am Anfang und Ende an. Diese Phase wird weder in Route noch Tempoberechnung einbezogen.</string>
+    <string name="warmup_cooldown_duration">Gehdauer pro Phase</string>
+    <string name="warmup_cooldown_disabled">Deaktiviert</string>
+    <string name="decrease_one_minute">-1 Min.</string>
+    <string name="increase_one_minute">+1 Min.</string>
     <string name="workout_debug_mode">Trainings-Debug-Modus</string>
     <string name="workout_debug_mode_subtitle">Nur in Debug-Builds. Verkürzt die Segmentdauern zur Laufzeit, damit komplette Trainings schneller enden.</string>
     <string name="workout_debug_mode_off">Normales Timing</string>

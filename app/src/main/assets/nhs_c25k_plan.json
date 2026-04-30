@@ -3,7 +3,6 @@
     "week": 1,
     "day": 1,
     "segments": [
-      {"type": "WALK", "durationSec": 300},
       {"type": "RUN", "durationSec": 60}, {"type": "WALK", "durationSec": 90},
       {"type": "RUN", "durationSec": 60}, {"type": "WALK", "durationSec": 90},
       {"type": "RUN", "durationSec": 60}, {"type": "WALK", "durationSec": 90},
@@ -11,8 +10,7 @@
       {"type": "RUN", "durationSec": 60}, {"type": "WALK", "durationSec": 90},
       {"type": "RUN", "durationSec": 60}, {"type": "WALK", "durationSec": 90},
       {"type": "RUN", "durationSec": 60}, {"type": "WALK", "durationSec": 90},
-      {"type": "RUN", "durationSec": 60},
-      {"type": "WALK", "durationSec": 300}
+      {"type": "RUN", "durationSec": 60}
     ]
   },
   {"week": 1, "day": 2, "segments": "same_as_w1d1"},
@@ -22,14 +20,12 @@
     "week": 2,
     "day": 1,
     "segments": [
-      {"type": "WALK", "durationSec": 300},
       {"type": "RUN", "durationSec": 90}, {"type": "WALK", "durationSec": 120},
       {"type": "RUN", "durationSec": 90}, {"type": "WALK", "durationSec": 120},
       {"type": "RUN", "durationSec": 90}, {"type": "WALK", "durationSec": 120},
       {"type": "RUN", "durationSec": 90}, {"type": "WALK", "durationSec": 120},
       {"type": "RUN", "durationSec": 90}, {"type": "WALK", "durationSec": 120},
-      {"type": "RUN", "durationSec": 90},
-      {"type": "WALK", "durationSec": 300}
+      {"type": "RUN", "durationSec": 90}
     ]
   },
   {"week": 2, "day": 2, "segments": "same_as_w2d1"},
@@ -39,12 +35,10 @@
     "week": 3,
     "day": 1,
     "segments": [
-      {"type": "WALK", "durationSec": 300},
       {"type": "RUN", "durationSec": 90}, {"type": "WALK", "durationSec": 90},
       {"type": "RUN", "durationSec": 180}, {"type": "WALK", "durationSec": 180},
       {"type": "RUN", "durationSec": 90}, {"type": "WALK", "durationSec": 90},
-      {"type": "RUN", "durationSec": 180},
-      {"type": "WALK", "durationSec": 300}
+      {"type": "RUN", "durationSec": 180}
     ]
   },
   {"week": 3, "day": 2, "segments": "same_as_w3d1"},
@@ -54,12 +48,10 @@
     "week": 4,
     "day": 1,
     "segments": [
-      {"type": "WALK", "durationSec": 300},
       {"type": "RUN", "durationSec": 180}, {"type": "WALK", "durationSec": 90},
       {"type": "RUN", "durationSec": 300}, {"type": "WALK", "durationSec": 150},
       {"type": "RUN", "durationSec": 180}, {"type": "WALK", "durationSec": 90},
-      {"type": "RUN", "durationSec": 300},
-      {"type": "WALK", "durationSec": 300}
+      {"type": "RUN", "durationSec": 300}
     ]
   },
   {"week": 4, "day": 2, "segments": "same_as_w4d1"},
@@ -69,30 +61,24 @@
     "week": 5,
     "day": 1,
     "segments": [
-      {"type": "WALK", "durationSec": 300},
       {"type": "RUN", "durationSec": 300}, {"type": "WALK", "durationSec": 180},
       {"type": "RUN", "durationSec": 300}, {"type": "WALK", "durationSec": 180},
-      {"type": "RUN", "durationSec": 300},
-      {"type": "WALK", "durationSec": 300}
+      {"type": "RUN", "durationSec": 300}
     ]
   },
   {
     "week": 5,
     "day": 2,
     "segments": [
-      {"type": "WALK", "durationSec": 300},
       {"type": "RUN", "durationSec": 480}, {"type": "WALK", "durationSec": 300},
-      {"type": "RUN", "durationSec": 480},
-      {"type": "WALK", "durationSec": 300}
+      {"type": "RUN", "durationSec": 480}
     ]
   },
   {
     "week": 5,
     "day": 3,
     "segments": [
-      {"type": "WALK", "durationSec": 300},
-      {"type": "RUN", "durationSec": 1200},
-      {"type": "WALK", "durationSec": 300}
+      {"type": "RUN", "durationSec": 1200}
     ]
   },
 
@@ -100,30 +86,24 @@
     "week": 6,
     "day": 1,
     "segments": [
-      {"type": "WALK", "durationSec": 300},
       {"type": "RUN", "durationSec": 300}, {"type": "WALK", "durationSec": 180},
       {"type": "RUN", "durationSec": 480}, {"type": "WALK", "durationSec": 180},
-      {"type": "RUN", "durationSec": 300},
-      {"type": "WALK", "durationSec": 300}
+      {"type": "RUN", "durationSec": 300}
     ]
   },
   {
     "week": 6,
     "day": 2,
     "segments": [
-      {"type": "WALK", "durationSec": 300},
       {"type": "RUN", "durationSec": 600}, {"type": "WALK", "durationSec": 180},
-      {"type": "RUN", "durationSec": 600},
-      {"type": "WALK", "durationSec": 300}
+      {"type": "RUN", "durationSec": 600}
     ]
   },
   {
     "week": 6,
     "day": 3,
     "segments": [
-      {"type": "WALK", "durationSec": 300},
-      {"type": "RUN", "durationSec": 1500},
-      {"type": "WALK", "durationSec": 300}
+      {"type": "RUN", "durationSec": 1500}
     ]
   },
 
@@ -131,9 +111,7 @@
     "week": 7,
     "day": 1,
     "segments": [
-      {"type": "WALK", "durationSec": 300},
-      {"type": "RUN", "durationSec": 1500},
-      {"type": "WALK", "durationSec": 300}
+      {"type": "RUN", "durationSec": 1500}
     ]
   },
   {"week": 7, "day": 2, "segments": "same_as_w7d1"},
@@ -143,9 +121,7 @@
     "week": 8,
     "day": 1,
     "segments": [
-      {"type": "WALK", "durationSec": 300},
-      {"type": "RUN", "durationSec": 1680},
-      {"type": "WALK", "durationSec": 300}
+      {"type": "RUN", "durationSec": 1680}
     ]
   },
   {"week": 8, "day": 2, "segments": "same_as_w8d1"},
@@ -155,9 +131,7 @@
     "week": 9,
     "day": 1,
     "segments": [
-      {"type": "WALK", "durationSec": 300},
-      {"type": "RUN", "durationSec": 1800},
-      {"type": "WALK", "durationSec": 300}
+      {"type": "RUN", "durationSec": 1800}
     ]
   },
   {"week": 9, "day": 2, "segments": "same_as_w9d1"},

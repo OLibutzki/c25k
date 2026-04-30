@@ -73,6 +73,8 @@ import com.example.c25k.AppContainer
 import com.example.c25k.C25kApplication
 import com.example.c25k.R
 import com.example.c25k.domain.AppLanguage
+import com.example.c25k.domain.DEFAULT_WARMUP_COOLDOWN_DURATION_SEC
+import com.example.c25k.domain.MAX_WARMUP_COOLDOWN_DURATION_SEC
 import com.example.c25k.domain.PlanSessionModel
 import com.example.c25k.domain.PlanSessionStatus
 import com.example.c25k.domain.SegmentType
@@ -82,6 +84,7 @@ import com.example.c25k.domain.WorkoutDebugMode
 import com.example.c25k.domain.WorkoutSummary
 import com.example.c25k.domain.latestCompletedSession
 import com.example.c25k.domain.nextSuggestedSession
+import com.example.c25k.domain.withWarmupCooldownDuration
 import com.example.c25k.service.WorkoutPhase
 import com.example.c25k.service.WorkoutRuntime
 import com.example.c25k.ui.theme.C25kTheme
@@ -169,6 +172,11 @@ fun C25kApp(container: AppContainer, application: C25kApplication) {
                                 application.applyLocale(language)
                             }
                         },
+                        onWarmupCooldownDurationChanged = { durationSec ->
+                            scope.launch {
+                                container.warmupCooldownRepository.setDurationSec(durationSec)
+                            }
+                        },
                         onDebugModeChanged = { mode ->
                             scope.launch {
                                 container.workoutDebugRepository.setMode(mode)
@@ -190,10 +198,15 @@ private fun HomeScreen(
 ) {
     val sessions by container.planRepository.observeAllSessions()
         .collectAsStateWithLifecycle(initialValue = emptyList())
+    val warmupCooldownDurationSec by container.warmupCooldownRepository.observeDurationSec()
+        .collectAsStateWithLifecycle(initialValue = DEFAULT_WARMUP_COOLDOWN_DURATION_SEC)
     val scope = rememberCoroutineScope()
-    val nextSession = sessions.nextSuggestedSession()
-    val latestCompleted = sessions.latestCompletedSession()
-    val completedCount = sessions.count { it.status == PlanSessionStatus.COMPLETED }
+    val displaySessions = remember(sessions, warmupCooldownDurationSec) {
+        sessions.map { it.withWarmupCooldownDuration(warmupCooldownDurationSec) }
+    }
+    val nextSession = displaySessions.nextSuggestedSession()
+    val latestCompleted = displaySessions.latestCompletedSession()
+    val completedCount = displaySessions.count { it.status == PlanSessionStatus.COMPLETED }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -211,7 +224,7 @@ private fun HomeScreen(
                     nextSession = nextSession,
                     latestCompleted = latestCompleted,
                     completedCount = completedCount,
-                    totalCount = sessions.size,
+                    totalCount = displaySessions.size,
                     onOpenHistory = onOpenHistory,
                     onOpenSettings = onOpenSettings,
                     onStartWorkout = nextSession?.let { { onStartWorkout(it.id) } }
@@ -219,7 +232,7 @@ private fun HomeScreen(
             }
             item {
                 PlanOverviewCard(
-                    sessions = sessions,
+                    sessions = displaySessions,
                     latestCompleted = latestCompleted
                 )
             }
@@ -229,7 +242,7 @@ private fun HomeScreen(
                     subtitle = stringResource(R.string.training_plan_subtitle)
                 )
             }
-            items(items = sessions, key = { it.id }) { session ->
+            items(items = displaySessions, key = { it.id }) { session ->
                 PlanSessionCard(
                     session = session,
                     isNext = nextSession?.id == session.id,
@@ -667,6 +680,8 @@ private fun LiveWorkoutScreen(onDone: () -> Unit) {
                                     text = when (state.currentSegmentType) {
                                         SegmentType.RUN -> stringResource(R.string.running)
                                         SegmentType.WALK -> stringResource(R.string.walking)
+                                        SegmentType.WARMUP -> stringResource(R.string.warmup)
+                                        SegmentType.COOLDOWN -> stringResource(R.string.cooldown)
                                         null -> "-"
                                     },
                                     style = MaterialTheme.typography.headlineMedium,
@@ -1134,10 +1149,13 @@ private fun SettingsScreen(
     container: AppContainer,
     onBack: () -> Unit,
     onLanguageChanged: (AppLanguage) -> Unit,
+    onWarmupCooldownDurationChanged: (Int) -> Unit,
     onDebugModeChanged: (WorkoutDebugMode) -> Unit
 ) {
     val language by container.languageRepository.observeLanguage()
         .collectAsStateWithLifecycle(initialValue = AppLanguage.SYSTEM)
+    val warmupCooldownDurationSec by container.warmupCooldownRepository.observeDurationSec()
+        .collectAsStateWithLifecycle(initialValue = DEFAULT_WARMUP_COOLDOWN_DURATION_SEC)
     val debugMode by container.workoutDebugRepository.observeMode()
         .collectAsStateWithLifecycle(initialValue = WorkoutDebugMode.OFF)
     val context = LocalContext.current
@@ -1172,6 +1190,52 @@ private fun SettingsScreen(
                             selected = language == AppLanguage.DE,
                             onClick = { onLanguageChanged(AppLanguage.DE) }
                         )
+                    }
+                }
+            }
+            item {
+                AppCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        SectionHeader(
+                            title = stringResource(R.string.warmup_cooldown),
+                            subtitle = stringResource(R.string.warmup_cooldown_subtitle)
+                        )
+                        MetricTile(
+                            label = stringResource(R.string.warmup_cooldown_duration),
+                            value = if (warmupCooldownDurationSec == 0) {
+                                stringResource(R.string.warmup_cooldown_disabled)
+                            } else {
+                                formatDurationWords(context, warmupCooldownDurationSec)
+                            }
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    onWarmupCooldownDurationChanged(
+                                        (warmupCooldownDurationSec - 60).coerceAtLeast(0)
+                                    )
+                                },
+                                enabled = warmupCooldownDurationSec > 0,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(stringResource(R.string.decrease_one_minute))
+                            }
+                            FilledTonalButton(
+                                onClick = {
+                                    onWarmupCooldownDurationChanged(
+                                        (warmupCooldownDurationSec + 60)
+                                            .coerceAtMost(MAX_WARMUP_COOLDOWN_DURATION_SEC)
+                                    )
+                                },
+                                enabled = warmupCooldownDurationSec < MAX_WARMUP_COOLDOWN_DURATION_SEC,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(stringResource(R.string.increase_one_minute))
+                            }
+                        }
                     }
                 }
             }
@@ -1423,6 +1487,8 @@ private fun segmentTypeLabel(type: SegmentType): String {
     return when (type) {
         SegmentType.RUN -> stringResource(R.string.running)
         SegmentType.WALK -> stringResource(R.string.walking)
+        SegmentType.WARMUP -> stringResource(R.string.warmup)
+        SegmentType.COOLDOWN -> stringResource(R.string.cooldown)
     }
 }
 

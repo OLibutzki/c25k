@@ -10,6 +10,8 @@ class CueFormatter(private val context: Context) {
         return when (type) {
             SegmentType.RUN -> context.getString(R.string.tts_start_running, duration)
             SegmentType.WALK -> context.getString(R.string.tts_start_walking, duration)
+            SegmentType.WARMUP -> context.getString(R.string.tts_start_warmup, duration)
+            SegmentType.COOLDOWN -> context.getString(R.string.tts_start_cooldown, duration)
         }
     }
 
@@ -17,6 +19,8 @@ class CueFormatter(private val context: Context) {
         return when (nextType) {
             SegmentType.RUN -> context.getString(R.string.tts_prepare_running)
             SegmentType.WALK -> context.getString(R.string.tts_prepare_walking)
+            SegmentType.WARMUP -> context.getString(R.string.tts_prepare_warmup)
+            SegmentType.COOLDOWN -> context.getString(R.string.tts_prepare_cooldown)
         }
     }
 
