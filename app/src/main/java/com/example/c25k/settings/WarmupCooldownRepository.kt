@@ -3,20 +3,17 @@ package com.example.c25k.settings
 import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import com.example.c25k.domain.DEFAULT_WARMUP_COOLDOWN_DURATION_SEC
 import com.example.c25k.domain.MAX_WARMUP_COOLDOWN_DURATION_SEC
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-private val Context.warmupCooldownDataStore by preferencesDataStore(name = "settings")
-
 class WarmupCooldownRepository(private val context: Context) {
     private val key = intPreferencesKey("warmup_cooldown_duration_sec")
 
     fun observeDurationSec(): Flow<Int> {
-        return context.warmupCooldownDataStore.data.map { prefs ->
+        return context.settingsDataStore.data.map { prefs ->
             (prefs[key] ?: DEFAULT_WARMUP_COOLDOWN_DURATION_SEC)
                 .coerceIn(0, MAX_WARMUP_COOLDOWN_DURATION_SEC)
         }
@@ -25,7 +22,7 @@ class WarmupCooldownRepository(private val context: Context) {
     suspend fun getDurationSec(): Int = observeDurationSec().first()
 
     suspend fun setDurationSec(durationSec: Int) {
-        context.warmupCooldownDataStore.edit { prefs ->
+        context.settingsDataStore.edit { prefs ->
             prefs[key] = durationSec.coerceIn(0, MAX_WARMUP_COOLDOWN_DURATION_SEC)
         }
     }
