@@ -83,8 +83,8 @@ import com.example.c25k.domain.TrackPointModel
 import com.example.c25k.domain.WorkoutDetail
 import com.example.c25k.domain.WorkoutDebugMode
 import com.example.c25k.domain.WorkoutSummary
-import com.example.c25k.domain.latestCompletedSession
-import com.example.c25k.domain.nextSuggestedSession
+import com.example.c25k.domain.furthestCompletedSession
+import com.example.c25k.domain.nextSessionFromPlanProgress
 import com.example.c25k.domain.withWarmupCooldownDuration
 import com.example.c25k.service.WorkoutPhase
 import com.example.c25k.service.WorkoutRuntime
@@ -231,12 +231,11 @@ private fun HomeScreen(
         .collectAsStateWithLifecycle(initialValue = emptyList())
     val warmupCooldownDurationSec by container.warmupCooldownRepository.observeDurationSec()
         .collectAsStateWithLifecycle(initialValue = DEFAULT_WARMUP_COOLDOWN_DURATION_SEC)
-    val scope = rememberCoroutineScope()
     val displaySessions = remember(sessions, warmupCooldownDurationSec) {
         sessions.map { it.withWarmupCooldownDuration(warmupCooldownDurationSec) }
     }
-    val nextSession = displaySessions.nextSuggestedSession()
-    val latestCompleted = displaySessions.latestCompletedSession()
+    val nextSession = displaySessions.nextSessionFromPlanProgress()
+    val latestCompleted = displaySessions.furthestCompletedSession()
     val completedCount = displaySessions.count { it.status == PlanSessionStatus.COMPLETED }
 
     Scaffold(
@@ -278,12 +277,7 @@ private fun HomeScreen(
                 PlanSessionCard(
                     session = session,
                     isNext = nextSession?.id == session.id,
-                    onStartWorkout = { onStartWorkout(session.id) },
-                    onSkip = {
-                        scope.launch {
-                            container.planRepository.markSkipped(session.id)
-                        }
-                    }
+                    onStartWorkout = { onStartWorkout(session.id) }
                 )
             }
             item {
@@ -364,13 +358,15 @@ private fun HomeHeroCard(
                         value = if (nextSession == null) {
                             stringResource(R.string.status_completed)
                         } else {
-                            planStatusLabel(session = nextSession, isNext = true)
+                            stringResource(R.string.week_day_format, nextSession.week, nextSession.day)
                         },
                         modifier = Modifier.weight(1f)
                     )
                     HeroMetric(
-                        label = stringResource(R.string.latest_finished_run),
-                        value = latestCompleted?.latestCompletedAtEpochMs?.let(::formatDate)
+                        label = stringResource(R.string.latest_plan_workout),
+                        value = latestCompleted?.let {
+                            stringResource(R.string.week_day_format, it.week, it.day)
+                        }
                             ?: stringResource(R.string.no_workouts_yet),
                         modifier = Modifier.weight(1f)
                     )
@@ -504,8 +500,7 @@ private fun SummaryMetric(label: String, value: String, modifier: Modifier = Mod
 private fun PlanSessionCard(
     session: PlanSessionModel,
     isNext: Boolean,
-    onStartWorkout: () -> Unit,
-    onSkip: () -> Unit
+    onStartWorkout: () -> Unit
 ) {
     val context = LocalContext.current
     val statusColor = planStatusColor(session.status, isNext)
@@ -552,20 +547,13 @@ private fun PlanSessionCard(
                 )
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(onClick = onStartWorkout, modifier = Modifier.weight(1f)) {
-                    Text(
-                        stringResource(
-                            if (session.status == PlanSessionStatus.COMPLETED) R.string.start_again
-                            else R.string.start_workout
-                        )
+            Button(onClick = onStartWorkout, modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    stringResource(
+                        if (session.status == PlanSessionStatus.COMPLETED) R.string.start_again
+                        else R.string.start_workout
                     )
-                }
-                if (session.status == PlanSessionStatus.PENDING) {
-                    OutlinedButton(onClick = onSkip, modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.skip_run))
-                    }
-                }
+                )
             }
         }
     }
@@ -1541,7 +1529,6 @@ private fun planStatusLabel(session: PlanSessionModel, isNext: Boolean): String 
     return when {
         isNext && session.status == PlanSessionStatus.PENDING -> stringResource(R.string.status_up_next)
         session.status == PlanSessionStatus.COMPLETED -> stringResource(R.string.status_completed)
-        session.status == PlanSessionStatus.SKIPPED -> stringResource(R.string.status_skipped)
         else -> stringResource(R.string.status_pending)
     }
 }
@@ -1551,7 +1538,6 @@ private fun planStatusColor(status: PlanSessionStatus, isNext: Boolean): Color {
     return when {
         isNext && status == PlanSessionStatus.PENDING -> MaterialTheme.colorScheme.primary
         status == PlanSessionStatus.COMPLETED -> MaterialTheme.colorScheme.tertiary
-        status == PlanSessionStatus.SKIPPED -> MaterialTheme.colorScheme.error
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 }

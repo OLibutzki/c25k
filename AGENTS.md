@@ -50,7 +50,8 @@
 - No cloud sync/export in v1.
 - Pace unit currently shown as `min/km`.
 - Language switches apply to UI and subsequent TTS cues.
-- Room currently uses destructive migration fallback; schema changes discard existing local data unless explicit migrations are added later.
+- Persisted local data can be discarded when needed.
+- Room currently uses destructive migration fallback; schema changes may discard existing local data instead of requiring explicit migrations.
 
 ## Recommended Next Steps
 - Add instrumentation tests for service background behavior + location mocking.

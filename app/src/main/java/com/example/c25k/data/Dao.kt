@@ -20,9 +20,6 @@ interface PlanDao {
     @Query("SELECT * FROM plan_sessions ORDER BY orderInPlan")
     fun observeSessions(): Flow<List<PlanSessionEntity>>
 
-    @Query("SELECT * FROM plan_sessions WHERE status = 'PENDING' ORDER BY orderInPlan LIMIT 1")
-    suspend fun getNextSession(): PlanSessionEntity?
-
     @Query("SELECT * FROM plan_sessions WHERE id = :id")
     suspend fun getSession(id: Long): PlanSessionEntity?
 
@@ -44,9 +41,6 @@ interface PlanDao {
         workoutId: Long,
         completedAtEpochMs: Long
     )
-
-    @Query("UPDATE plan_sessions SET status = :status WHERE id = :sessionId")
-    suspend fun updateStatus(sessionId: Long, status: PlanSessionStatus)
 }
 
 @Dao

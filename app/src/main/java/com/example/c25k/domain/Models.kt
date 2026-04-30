@@ -9,8 +9,7 @@ enum class SegmentType {
 
 enum class PlanSessionStatus {
     PENDING,
-    COMPLETED,
-    SKIPPED
+    COMPLETED
 }
 
 enum class AppLanguage(val tag: String) {
@@ -48,6 +47,7 @@ data class PlanSessionModel(
     val id: Long,
     val week: Int,
     val day: Int,
+    val orderInPlan: Int,
     val segments: List<PlanSegmentModel>,
     val status: PlanSessionStatus,
     val latestCompletedWorkoutId: Long?,
@@ -83,12 +83,18 @@ data class TrackPointModel(
     val segmentType: SegmentType
 )
 
-fun List<PlanSessionModel>.nextSuggestedSession(): PlanSessionModel? =
-    firstOrNull { it.status == PlanSessionStatus.PENDING }
+fun List<PlanSessionModel>.furthestCompletedSession(): PlanSessionModel? =
+    filter { it.status == PlanSessionStatus.COMPLETED }
+        .maxByOrNull { it.orderInPlan }
 
-fun List<PlanSessionModel>.latestCompletedSession(): PlanSessionModel? =
-    filter { it.status == PlanSessionStatus.COMPLETED && it.latestCompletedAtEpochMs != null }
-        .maxByOrNull { it.latestCompletedAtEpochMs ?: Long.MIN_VALUE }
+fun List<PlanSessionModel>.nextSessionFromPlanProgress(): PlanSessionModel? {
+    val furthestCompleted = furthestCompletedSession()
+    return if (furthestCompleted == null) {
+        minByOrNull { it.orderInPlan }
+    } else {
+        firstOrNull { it.orderInPlan > furthestCompleted.orderInPlan }
+    }
+}
 
 fun PlanSessionModel.withDurationsDividedBy(divisor: Int): PlanSessionModel {
     if (divisor <= 1) return this

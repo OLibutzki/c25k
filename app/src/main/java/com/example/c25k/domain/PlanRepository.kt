@@ -14,6 +14,7 @@ class PlanRepository(private val planDao: PlanDao) {
                     id = session.id,
                     week = session.week,
                     day = session.day,
+                    orderInPlan = session.orderInPlan,
                     segments = segments,
                     status = session.status,
                     latestCompletedWorkoutId = session.latestCompletedWorkoutId,
@@ -30,6 +31,7 @@ class PlanRepository(private val planDao: PlanDao) {
             id = session.id,
             week = session.week,
             day = session.day,
+            orderInPlan = session.orderInPlan,
             segments = segments,
             status = session.status,
             latestCompletedWorkoutId = session.latestCompletedWorkoutId,
@@ -44,12 +46,6 @@ class PlanRepository(private val planDao: PlanDao) {
             workoutId = workoutId,
             completedAtEpochMs = completedAtEpochMs
         )
-    }
-
-    suspend fun markSkipped(sessionId: Long) {
-        val session = planDao.getSession(sessionId) ?: return
-        if (session.status == PlanSessionStatus.COMPLETED) return
-        planDao.updateStatus(sessionId, PlanSessionStatus.SKIPPED)
     }
 }
 
