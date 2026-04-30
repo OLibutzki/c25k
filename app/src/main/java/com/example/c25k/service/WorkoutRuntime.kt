@@ -17,6 +17,7 @@ enum class WorkoutPhase {
 
 data class WorkoutState(
     val phase: WorkoutPhase = WorkoutPhase.IDLE,
+    val completedWorkoutId: Long? = null,
     val sessionId: Long? = null,
     val week: Int? = null,
     val day: Int? = null,

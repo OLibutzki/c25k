@@ -120,6 +120,20 @@ fun C25kApp(container: AppContainer, application: C25kApplication) {
                 }
             }
 
+            LaunchedEffect(workoutState.phase, workoutState.completedWorkoutId, currentRoute) {
+                val completedWorkoutId = workoutState.completedWorkoutId
+                if (
+                    workoutState.phase == WorkoutPhase.COMPLETED &&
+                    completedWorkoutId != null &&
+                    currentRoute != "summary/{workoutId}"
+                ) {
+                    navController.navigate("summary/$completedWorkoutId") {
+                        popUpTo("home")
+                        launchSingleTop = true
+                    }
+                }
+            }
+
             NavHost(
                 navController = navController,
                 startDestination = "home"
@@ -161,6 +175,22 @@ fun C25kApp(container: AppContainer, application: C25kApplication) {
                         container = container,
                         workoutId = workoutId,
                         onBack = { navController.popBackStack() }
+                    )
+                }
+                composable(
+                    route = "summary/{workoutId}",
+                    arguments = listOf(navArgument("workoutId") { type = NavType.LongType })
+                ) { entry ->
+                    val workoutId = entry.arguments?.getLong("workoutId") ?: return@composable
+                    WorkoutSummaryScreen(
+                        container = container,
+                        workoutId = workoutId,
+                        onBack = {
+                            navController.navigate("home") {
+                                popUpTo("home") { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        }
                     )
                 }
                 composable("settings") {
@@ -982,11 +1012,56 @@ private fun WorkoutDetailScreen(
     workoutId: Long,
     onBack: () -> Unit
 ) {
+    WorkoutDetailScaffold(
+        container = container,
+        workoutId = workoutId,
+        title = stringResource(R.string.history),
+        onBack = onBack
+    )
+}
+
+@Composable
+private fun WorkoutSummaryScreen(
+    container: AppContainer,
+    workoutId: Long,
+    onBack: () -> Unit
+) {
+    WorkoutDetailScaffold(
+        container = container,
+        workoutId = workoutId,
+        title = stringResource(R.string.workout_summary),
+        onBack = onBack,
+        topContent = {
+            AppCard {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.workout_summary_congrats_title),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = stringResource(R.string.workout_summary_congrats_message),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun WorkoutDetailScaffold(
+    container: AppContainer,
+    workoutId: Long,
+    title: String,
+    onBack: () -> Unit,
+    topContent: (@Composable () -> Unit)? = null
+) {
     val detail by produceState<WorkoutDetail?>(initialValue = null, workoutId) {
         value = container.workoutRepository.getWorkoutDetail(workoutId)
     }
 
-    AppScaffold(title = stringResource(R.string.history), onBack = onBack) { padding ->
+    AppScaffold(title = title, onBack = onBack) { padding ->
         if (detail == null) {
             EmptyState(
                 modifier = Modifier
@@ -1005,6 +1080,11 @@ private fun WorkoutDetailScreen(
                 contentPadding = PaddingValues(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                if (topContent != null) {
+                    item {
+                        topContent()
+                    }
+                }
                 item {
                     AppCard {
                         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {

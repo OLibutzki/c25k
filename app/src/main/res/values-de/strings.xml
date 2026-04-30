@@ -23,6 +23,9 @@
     <string name="week_day_format">Woche %1$d, Tag %2$d</string>
     <string name="no_workouts_yet">Noch keine Trainings.</string>
     <string name="workout_complete">Training abgeschlossen</string>
+    <string name="workout_summary">Trainingszusammenfassung</string>
+    <string name="workout_summary_congrats_title">Glückwunsch!</string>
+    <string name="workout_summary_congrats_message">Du hast das Training abgeschlossen.</string>
     <string name="notification_channel_name">Trainingsführung</string>
     <string name="notification_channel_desc">Intervallansagen und Trainingsfortschritt</string>
     <string name="notification_title">C25K Training aktiv</string>
@@ -35,7 +38,7 @@
     <string name="tts_prepare_walking">In 10 Sekunden gehen.</string>
     <string name="tts_prepare_warmup">In 10 Sekunden beginnt das Aufwärmen.</string>
     <string name="tts_prepare_cooldown">In 10 Sekunden beginnt der Cooldown.</string>
-    <string name="tts_workout_complete">Training abgeschlossen. Gute Arbeit.</string>
+    <string name="tts_workout_complete">Glückwunsch! Du hast das Training abgeschlossen.</string>
     <string name="tts_language_missing">Gewählte Sprachausgabe nicht verfügbar. Tonsignal wird genutzt.</string>
     <string name="refresh">Aktualisieren</string>
     <string name="back">Zurück</string>

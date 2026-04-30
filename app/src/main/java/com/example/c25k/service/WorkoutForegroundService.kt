@@ -259,17 +259,20 @@ class WorkoutForegroundService : Service() {
                 segments = segments,
                 points = pointCaptures.toList()
             )
-            app.container.workoutRepository.persistCompletedWorkout(request)
-            stopWorkout(markComplete = true)
+            val workoutId = app.container.workoutRepository.persistCompletedWorkout(request)
+            stopWorkout(markComplete = true, completedWorkoutId = workoutId)
         }
     }
 
-    private fun stopWorkout(markComplete: Boolean) {
+    private fun stopWorkout(markComplete: Boolean, completedWorkoutId: Long? = null) {
         timerJob?.cancel()
         locationJob?.cancel()
         WorkoutRuntime.updateState(
             if (markComplete) {
-                WorkoutState(phase = WorkoutPhase.COMPLETED)
+                WorkoutState(
+                    phase = WorkoutPhase.COMPLETED,
+                    completedWorkoutId = completedWorkoutId
+                )
             } else {
                 WorkoutState(phase = WorkoutPhase.IDLE)
             }
