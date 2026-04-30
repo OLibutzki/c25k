@@ -1,6 +1,7 @@
 package com.example.c25k.ui
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.icu.text.SimpleDateFormat
 import android.icu.util.Calendar
 import androidx.compose.foundation.background
@@ -77,6 +78,7 @@ import com.example.c25k.domain.PlanSessionStatus
 import com.example.c25k.domain.SegmentType
 import com.example.c25k.domain.TrackPointModel
 import com.example.c25k.domain.WorkoutDetail
+import com.example.c25k.domain.WorkoutDebugMode
 import com.example.c25k.domain.WorkoutSummary
 import com.example.c25k.domain.latestCompletedSession
 import com.example.c25k.domain.nextSuggestedSession
@@ -165,6 +167,11 @@ fun C25kApp(container: AppContainer, application: C25kApplication) {
                             scope.launch {
                                 container.languageRepository.setLanguage(language)
                                 application.applyLocale(language)
+                            }
+                        },
+                        onDebugModeChanged = { mode ->
+                            scope.launch {
+                                container.workoutDebugRepository.setMode(mode)
                             }
                         }
                     )
@@ -929,6 +936,13 @@ private fun WorkoutHistoryCard(item: WorkoutSummary, onClick: () -> Unit) {
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
+            if (item.week != null && item.day != null) {
+                Text(
+                    text = stringResource(R.string.week_day_format, item.week, item.day),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 SummaryMetric(
                     label = stringResource(R.string.distance),
@@ -982,6 +996,16 @@ private fun WorkoutDetailScreen(
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold
                             )
+                            if (current.workout.week != null && current.workout.day != null) {
+                                Text(
+                                    text = stringResource(
+                                        R.string.week_day_format,
+                                        current.workout.week,
+                                        current.workout.day
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 SummaryMetric(
                                     label = stringResource(R.string.distance),
@@ -1109,10 +1133,14 @@ private fun RouteMap(points: List<TrackPointModel>) {
 private fun SettingsScreen(
     container: AppContainer,
     onBack: () -> Unit,
-    onLanguageChanged: (AppLanguage) -> Unit
+    onLanguageChanged: (AppLanguage) -> Unit,
+    onDebugModeChanged: (WorkoutDebugMode) -> Unit
 ) {
     val language by container.languageRepository.observeLanguage()
         .collectAsStateWithLifecycle(initialValue = AppLanguage.SYSTEM)
+    val debugMode by container.workoutDebugRepository.observeMode()
+        .collectAsStateWithLifecycle(initialValue = WorkoutDebugMode.OFF)
+    val context = LocalContext.current
 
     AppScaffold(title = stringResource(R.string.settings), onBack = onBack) { padding ->
         LazyColumn(
@@ -1144,6 +1172,33 @@ private fun SettingsScreen(
                             selected = language == AppLanguage.DE,
                             onClick = { onLanguageChanged(AppLanguage.DE) }
                         )
+                    }
+                }
+            }
+            if (context.isDebuggableApp()) {
+                item {
+                    AppCard {
+                        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            SectionHeader(
+                                title = stringResource(R.string.workout_debug_mode),
+                                subtitle = stringResource(R.string.workout_debug_mode_subtitle)
+                            )
+                            LanguageOption(
+                                title = stringResource(R.string.workout_debug_mode_off),
+                                selected = debugMode == WorkoutDebugMode.OFF,
+                                onClick = { onDebugModeChanged(WorkoutDebugMode.OFF) }
+                            )
+                            LanguageOption(
+                                title = stringResource(R.string.workout_debug_mode_x10),
+                                selected = debugMode == WorkoutDebugMode.X10,
+                                onClick = { onDebugModeChanged(WorkoutDebugMode.X10) }
+                            )
+                            LanguageOption(
+                                title = stringResource(R.string.workout_debug_mode_x60),
+                                selected = debugMode == WorkoutDebugMode.X60,
+                                onClick = { onDebugModeChanged(WorkoutDebugMode.X60) }
+                            )
+                        }
                     }
                 }
             }
@@ -1382,6 +1437,9 @@ private fun formatDate(epochMs: Long): String {
     val calendar = Calendar.getInstance().apply { timeInMillis = epochMs }
     return fmt.format(calendar)
 }
+
+private fun Context.isDebuggableApp(): Boolean =
+    applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
 
 private fun formatDurationWords(context: Context, totalSec: Int): String {
     val minutes = totalSec / 60

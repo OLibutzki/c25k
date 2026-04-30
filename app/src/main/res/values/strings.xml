@@ -66,6 +66,11 @@
     <string name="session_breakdown">Session breakdown</string>
     <string name="session_breakdown_subtitle">Each recorded segment with its own pace and distance.</string>
     <string name="language_subtitle">Choose the language for the interface and future voice cues.</string>
+    <string name="workout_debug_mode">Workout debug mode</string>
+    <string name="workout_debug_mode_subtitle">Debug builds only. Shortens segment durations at runtime so full workouts finish faster.</string>
+    <string name="workout_debug_mode_off">Normal timing</string>
+    <string name="workout_debug_mode_x10">10x faster</string>
+    <string name="workout_debug_mode_x60">60x faster</string>
     <string name="pause_workout_title">Pause workout?</string>
     <string name="pause_workout_message">Do you want to pause the current workout?</string>
     <string name="stop_workout_title">Stop workout?</string>

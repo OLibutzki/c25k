@@ -21,6 +21,17 @@ enum class AppLanguage(val tag: String) {
     }
 }
 
+enum class WorkoutDebugMode(val tag: String, val durationDivisor: Int) {
+    OFF("off", 1),
+    X10("x10", 10),
+    X60("x60", 60);
+
+    companion object {
+        fun fromTag(tag: String): WorkoutDebugMode =
+            entries.firstOrNull { it.tag == tag } ?: OFF
+    }
+}
+
 data class PlanSegmentModel(
     val segmentOrder: Int,
     val type: SegmentType,
@@ -39,6 +50,9 @@ data class PlanSessionModel(
 
 data class WorkoutSummary(
     val id: Long,
+    val sessionId: Long,
+    val week: Int?,
+    val day: Int?,
     val startedAtEpochMs: Long,
     val completedAtEpochMs: Long,
     val distanceMeters: Double,
@@ -69,3 +83,12 @@ fun List<PlanSessionModel>.nextSuggestedSession(): PlanSessionModel? =
 fun List<PlanSessionModel>.latestCompletedSession(): PlanSessionModel? =
     filter { it.status == PlanSessionStatus.COMPLETED && it.latestCompletedAtEpochMs != null }
         .maxByOrNull { it.latestCompletedAtEpochMs ?: Long.MIN_VALUE }
+
+fun PlanSessionModel.withDurationsDividedBy(divisor: Int): PlanSessionModel {
+    if (divisor <= 1) return this
+    return copy(
+        segments = segments.map { segment ->
+            segment.copy(durationSec = maxOf(1, (segment.durationSec + divisor - 1) / divisor))
+        }
+    )
+}

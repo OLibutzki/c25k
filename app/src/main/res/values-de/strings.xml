@@ -66,6 +66,11 @@
     <string name="session_breakdown">Einheitenaufschlüsselung</string>
     <string name="session_breakdown_subtitle">Jeder aufgezeichnete Abschnitt mit Tempo und Distanz.</string>
     <string name="language_subtitle">Wähle die Sprache für Oberfläche und künftige Sprachansagen.</string>
+    <string name="workout_debug_mode">Trainings-Debug-Modus</string>
+    <string name="workout_debug_mode_subtitle">Nur in Debug-Builds. Verkürzt die Segmentdauern zur Laufzeit, damit komplette Trainings schneller enden.</string>
+    <string name="workout_debug_mode_off">Normales Timing</string>
+    <string name="workout_debug_mode_x10">10x schneller</string>
+    <string name="workout_debug_mode_x60">60x schneller</string>
     <string name="pause_workout_title">Training pausieren?</string>
     <string name="pause_workout_message">Möchtest du das aktuelle Training pausieren?</string>
     <string name="stop_workout_title">Training stoppen?</string>

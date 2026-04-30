@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.location.Location
 import android.os.Build
 import android.os.IBinder
@@ -19,7 +20,9 @@ import com.example.c25k.domain.SegmentStats
 import com.example.c25k.domain.SegmentType
 import com.example.c25k.domain.TrackPointCapture
 import com.example.c25k.domain.WorkoutMath
+import com.example.c25k.domain.WorkoutDebugMode
 import com.example.c25k.domain.WorkoutPersistRequest
+import com.example.c25k.domain.withDurationsDividedBy
 import com.example.c25k.tts.TtsCoach
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -95,7 +98,12 @@ class WorkoutForegroundService : Service() {
             app.applyLocale(language)
             ttsCoach.setLanguage(language)
 
-            resetRuntime(session)
+            val debugMode = if (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) {
+                app.container.workoutDebugRepository.getMode()
+            } else {
+                WorkoutDebugMode.OFF
+            }
+            resetRuntime(session.withDurationsDividedBy(debugMode.durationDivisor))
             speakTransitionCue()
             startTimerLoop()
             startLocationLoop()
@@ -232,8 +240,7 @@ class WorkoutForegroundService : Service() {
                 segments = segments,
                 points = pointCaptures.toList()
             )
-            val workoutId = app.container.workoutRepository.persistWorkout(request)
-            app.container.planRepository.markComplete(session.id, workoutId, request.completedAtEpochMs)
+            app.container.workoutRepository.persistCompletedWorkout(request)
             stopWorkout(markComplete = true)
         }
     }
