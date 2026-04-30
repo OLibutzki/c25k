@@ -100,4 +100,5 @@
         <item quantity="one">%d second</item>
         <item quantity="other">%d seconds</item>
     </plurals>
+    <string name="duration_minutes_and_seconds">%1$s and %2$s</string>
 </resources>

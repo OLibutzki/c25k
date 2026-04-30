@@ -29,10 +29,16 @@ class CueFormatter(private val context: Context) {
     private fun formatDuration(durationSec: Int): String {
         val minutes = durationSec / 60
         val seconds = durationSec % 60
-        return if (seconds == 0 && minutes > 0) {
-            context.resources.getQuantityString(R.plurals.duration_minutes, minutes, minutes)
-        } else {
-            context.resources.getQuantityString(R.plurals.duration_seconds, durationSec, durationSec)
+        if (minutes <= 0) {
+            return context.resources.getQuantityString(R.plurals.duration_seconds, durationSec, durationSec)
         }
+
+        val minuteText = context.resources.getQuantityString(R.plurals.duration_minutes, minutes, minutes)
+        if (seconds == 0) {
+            return minuteText
+        }
+
+        val secondText = context.resources.getQuantityString(R.plurals.duration_seconds, seconds, seconds)
+        return context.getString(R.string.duration_minutes_and_seconds, minuteText, secondText)
     }
 }

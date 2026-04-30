@@ -325,6 +325,8 @@ class WorkoutForegroundService : Service() {
         val language = app.container.languageRepository.getLanguage()
         app.applyLocale(language)
         ttsCoach.setLanguage(language)
+        ttsCoach.playPhaseStartBeep()
+        delay(150L)
         ttsCoach.speak(app.container.cueFormatter.transitionCue(currentType(), remainingSec))
     }
 

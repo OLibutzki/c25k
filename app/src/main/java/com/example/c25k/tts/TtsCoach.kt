@@ -36,6 +36,11 @@ class TtsCoach(private val context: Context) : TextToSpeech.OnInitListener {
         if (result == TextToSpeech.ERROR) playFallbackTone()
     }
 
+    fun playPhaseStartBeep() {
+        ToneGenerator(AudioManager.STREAM_ALARM, 100)
+            .startTone(ToneGenerator.TONE_PROP_BEEP, 150)
+    }
+
     fun shutdown() {
         tts?.stop()
         tts?.shutdown()
