@@ -11,6 +11,7 @@ import android.content.pm.ApplicationInfo
 import android.location.Location
 import android.os.Build
 import android.os.IBinder
+import android.text.format.DateUtils
 import androidx.core.app.NotificationCompat
 import com.example.c25k.C25kApplication
 import com.example.c25k.MainActivity
@@ -349,10 +350,27 @@ class WorkoutForegroundService : Service() {
             getString(R.string.stop),
             servicePendingIntent(WorkoutRuntime.ACTION_STOP)
         )
+        val hasActiveSegment = planSession != null
+        val currentPhaseLabel = notificationSegmentLabel()
+        val remainingTime = formatNotificationCountdown(remainingSec)
+        val title = if (!hasActiveSegment) {
+            getString(R.string.notification_title)
+        } else if (paused) {
+            getString(R.string.notification_paused_title, currentPhaseLabel)
+        } else {
+            currentPhaseLabel
+        }
+        val contentText = if (!hasActiveSegment) {
+            getString(R.string.notification_text)
+        } else if (paused) {
+            getString(R.string.notification_paused_text, remainingTime)
+        } else {
+            getString(R.string.notification_active_text, remainingTime)
+        }
 
         return NotificationCompat.Builder(this, channelId)
-            .setContentTitle(getString(R.string.notification_title))
-            .setContentText(getString(R.string.notification_text))
+            .setContentTitle(title)
+            .setContentText(contentText)
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -399,6 +417,19 @@ class WorkoutForegroundService : Service() {
         }
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(channel)
+    }
+
+    private fun notificationSegmentLabel(): String {
+        return when (currentType()) {
+            SegmentType.RUN -> getString(R.string.running)
+            SegmentType.WALK -> getString(R.string.walking)
+            SegmentType.WARMUP -> getString(R.string.warmup)
+            SegmentType.COOLDOWN -> getString(R.string.cooldown)
+        }
+    }
+
+    private fun formatNotificationCountdown(totalSec: Int): String {
+        return DateUtils.formatElapsedTime(totalSec.coerceAtLeast(0).toLong())
     }
 
     private fun currentType(): SegmentType {

@@ -30,6 +30,9 @@
     <string name="notification_channel_desc">Intervallansagen und Trainingsfortschritt</string>
     <string name="notification_title">C25K Training aktiv</string>
     <string name="notification_text">Geführtes Training läuft</string>
+    <string name="notification_active_text">Phase endet in %1$s</string>
+    <string name="notification_paused_title">%1$s pausiert</string>
+    <string name="notification_paused_text">%1$s verbleiben in dieser Phase</string>
     <string name="tts_start_running">Lauf jetzt für %1$s.</string>
     <string name="tts_start_walking">Geh jetzt für %1$s.</string>
     <string name="tts_start_warmup">Starte deinen Aufwärm-Gehabschnitt für %1$s.</string>

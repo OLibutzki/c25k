@@ -30,6 +30,9 @@
     <string name="notification_channel_desc">Interval coaching and workout progress</string>
     <string name="notification_title">C25K Workout Active</string>
     <string name="notification_text">Guided training in progress</string>
+    <string name="notification_active_text">Phase ends in %1$s</string>
+    <string name="notification_paused_title">%1$s paused</string>
+    <string name="notification_paused_text">%1$s remaining in this phase</string>
     <string name="tts_start_running">Start running for %1$s.</string>
     <string name="tts_start_walking">Start walking for %1$s.</string>
     <string name="tts_start_warmup">Start your warm-up walk for %1$s.</string>
