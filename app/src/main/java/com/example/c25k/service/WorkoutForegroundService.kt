@@ -330,7 +330,9 @@ class WorkoutForegroundService : Service() {
     }
 
     private fun activityPendingIntent(): PendingIntent {
-        val intent = Intent(this, MainActivity::class.java)
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
         return PendingIntent.getActivity(
             this,
             1,

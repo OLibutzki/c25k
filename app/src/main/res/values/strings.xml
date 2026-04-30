@@ -33,6 +33,7 @@
     <string name="tts_language_missing">Selected voice language unavailable. Using tone fallback.</string>
     <string name="refresh">Refresh</string>
     <string name="back">Back</string>
+    <string name="cancel">Cancel</string>
     <string name="avg_pace_label">Avg pace:</string>
     <string name="run_pace_label">Run pace:</string>
     <string name="walk_pace_label">Walk pace:</string>
@@ -65,6 +66,10 @@
     <string name="session_breakdown">Session breakdown</string>
     <string name="session_breakdown_subtitle">Each recorded segment with its own pace and distance.</string>
     <string name="language_subtitle">Choose the language for the interface and future voice cues.</string>
+    <string name="pause_workout_title">Pause workout?</string>
+    <string name="pause_workout_message">Do you want to pause the current workout?</string>
+    <string name="stop_workout_title">Stop workout?</string>
+    <string name="stop_workout_message">Do you want to stop the current workout?</string>
     <string name="selected">Selected</string>
     <string name="available">Available</string>
     <plurals name="duration_minutes">

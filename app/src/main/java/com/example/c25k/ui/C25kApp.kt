@@ -24,6 +24,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.activity.compose.BackHandler
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -40,10 +42,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,6 +65,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.c25k.AppContainer
@@ -94,6 +100,19 @@ fun C25kApp(container: AppContainer, application: C25kApplication) {
             val navController = rememberNavController()
             val context = LocalContext.current
             val scope = rememberCoroutineScope()
+            val workoutState by WorkoutRuntime.state.collectAsStateWithLifecycle()
+            val backStackEntry by navController.currentBackStackEntryAsState()
+            val currentRoute = backStackEntry?.destination?.route
+            val hasActiveWorkout = workoutState.phase == WorkoutPhase.RUNNING || workoutState.phase == WorkoutPhase.PAUSED
+
+            LaunchedEffect(hasActiveWorkout, currentRoute) {
+                if (hasActiveWorkout && currentRoute != "live") {
+                    navController.navigate("live") {
+                        popUpTo("home")
+                        launchSingleTop = true
+                    }
+                }
+            }
 
             NavHost(
                 navController = navController,
@@ -111,7 +130,14 @@ fun C25kApp(container: AppContainer, application: C25kApplication) {
                     )
                 }
                 composable("live") {
-                    LiveWorkoutScreen(onDone = { navController.navigate("home") })
+                    LiveWorkoutScreen(
+                        onDone = {
+                            navController.navigate("home") {
+                                popUpTo("home")
+                                launchSingleTop = true
+                            }
+                        }
+                    )
                 }
                 composable("history") {
                     HistoryScreen(
@@ -542,6 +568,68 @@ private fun SessionSegmentPreview(session: PlanSessionModel) {
 private fun LiveWorkoutScreen(onDone: () -> Unit) {
     val state by WorkoutRuntime.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var pendingConfirmation by remember { mutableStateOf<WorkoutActionConfirmation?>(null) }
+    val hasActiveWorkout = state.phase == WorkoutPhase.RUNNING || state.phase == WorkoutPhase.PAUSED
+
+    BackHandler(enabled = hasActiveWorkout) {
+        pendingConfirmation = WorkoutActionConfirmation.STOP
+    }
+
+    pendingConfirmation?.let { confirmation ->
+        AlertDialog(
+            onDismissRequest = { pendingConfirmation = null },
+            title = {
+                Text(
+                    text = stringResource(
+                        if (confirmation == WorkoutActionConfirmation.PAUSE) {
+                            R.string.pause_workout_title
+                        } else {
+                            R.string.stop_workout_title
+                        }
+                    )
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(
+                        if (confirmation == WorkoutActionConfirmation.PAUSE) {
+                            R.string.pause_workout_message
+                        } else {
+                            R.string.stop_workout_message
+                        }
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingConfirmation = null
+                        if (confirmation == WorkoutActionConfirmation.PAUSE) {
+                            WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_PAUSE)
+                        } else {
+                            WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_STOP)
+                            onDone()
+                        }
+                    }
+                ) {
+                    Text(
+                        stringResource(
+                            if (confirmation == WorkoutActionConfirmation.PAUSE) {
+                                R.string.pause
+                            } else {
+                                R.string.stop
+                            }
+                        )
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingConfirmation = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
 
     AppScaffold(title = stringResource(R.string.live_workout)) { padding ->
         LazyColumn(
@@ -672,7 +760,7 @@ private fun LiveWorkoutScreen(onDone: () -> Unit) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     if (state.phase == WorkoutPhase.RUNNING) {
                         Button(
-                            onClick = { WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_PAUSE) },
+                            onClick = { pendingConfirmation = WorkoutActionConfirmation.PAUSE },
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(stringResource(R.string.pause))
@@ -687,10 +775,7 @@ private fun LiveWorkoutScreen(onDone: () -> Unit) {
                         }
                     }
                     OutlinedButton(
-                        onClick = {
-                            WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_STOP)
-                            onDone()
-                        },
+                        onClick = { pendingConfirmation = WorkoutActionConfirmation.STOP },
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(stringResource(R.string.stop))
@@ -715,6 +800,11 @@ private enum class PhaseTimelineStatus {
     COMPLETED,
     CURRENT,
     UPCOMING
+}
+
+private enum class WorkoutActionConfirmation {
+    PAUSE,
+    STOP
 }
 
 @Composable

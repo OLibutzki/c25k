@@ -33,6 +33,7 @@
     <string name="tts_language_missing">Gewählte Sprachausgabe nicht verfügbar. Tonsignal wird genutzt.</string>
     <string name="refresh">Aktualisieren</string>
     <string name="back">Zurück</string>
+    <string name="cancel">Abbrechen</string>
     <string name="avg_pace_label">Durchschnittstempo:</string>
     <string name="run_pace_label">Lauftempo:</string>
     <string name="walk_pace_label">Gehtempo:</string>
@@ -65,6 +66,10 @@
     <string name="session_breakdown">Einheitenaufschlüsselung</string>
     <string name="session_breakdown_subtitle">Jeder aufgezeichnete Abschnitt mit Tempo und Distanz.</string>
     <string name="language_subtitle">Wähle die Sprache für Oberfläche und künftige Sprachansagen.</string>
+    <string name="pause_workout_title">Training pausieren?</string>
+    <string name="pause_workout_message">Möchtest du das aktuelle Training pausieren?</string>
+    <string name="stop_workout_title">Training stoppen?</string>
+    <string name="stop_workout_message">Möchtest du das aktuelle Training stoppen?</string>
     <string name="selected">Ausgewählt</string>
     <string name="available">Verfügbar</string>
     <plurals name="duration_minutes">
