@@ -2,8 +2,7 @@ package com.example.c25k.ui
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
-import android.icu.text.SimpleDateFormat
-import android.icu.util.Calendar
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
@@ -99,6 +98,9 @@ import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Polyline
+import java.text.DateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.roundToInt
 
 @Composable
@@ -764,7 +766,7 @@ private fun LiveWorkoutScreen(onDone: () -> Unit) {
                             )
                             MetricTile(
                                 label = stringResource(R.string.distance),
-                                value = "${"%.2f".format(state.totalDistanceMeters / 1000.0)} km",
+                                value = formatDistanceKm(state.totalDistanceMeters),
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -992,7 +994,7 @@ private fun WorkoutHistoryCard(item: WorkoutSummary, onClick: () -> Unit) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 SummaryMetric(
                     label = stringResource(R.string.distance),
-                    value = "${"%.2f".format(item.distanceMeters / 1000.0)} km",
+                    value = formatDistanceKm(item.distanceMeters),
                     modifier = Modifier.weight(1f)
                 )
                 SummaryMetric(
@@ -1111,7 +1113,7 @@ private fun WorkoutDetailScaffold(
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 SummaryMetric(
                                     label = stringResource(R.string.distance),
-                                    value = "${"%.2f".format(current.workout.distanceMeters / 1000.0)} km",
+                                    value = formatDistanceKm(current.workout.distanceMeters),
                                     modifier = Modifier.weight(1f)
                                 )
                                 SummaryMetric(
@@ -1210,7 +1212,7 @@ private fun WorkoutDetailScaffold(
                                 )
                             }
                             StatusBadge(
-                                label = "${"%.2f".format(seg.distanceMeters / 1000.0)} km",
+                                label = formatDistanceKm(seg.distanceMeters),
                                 color = if (isSelected) {
                                     MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
                                 } else {
@@ -1645,7 +1647,7 @@ private fun formatPace(secPerKm: Double?): String {
     val total = secPerKm.roundToInt()
     val min = total / 60
     val sec = total % 60
-    return "%d:%02d /km".format(min, sec)
+    return String.format(Locale.ROOT, "%d:%02d /km", min, sec)
 }
 
 @Composable
@@ -1671,17 +1673,38 @@ private fun segmentSummaryLabel(type: SegmentType, durationSec: Long): String {
 private fun formatClock(totalSec: Long): String {
     val min = totalSec / 60
     val sec = totalSec % 60
-    return "%02d:%02d".format(min, sec)
+    return String.format(Locale.ROOT, "%02d:%02d", min, sec)
 }
 
+@Composable
 private fun formatDate(epochMs: Long): String {
-    val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm")
-    val calendar = Calendar.getInstance().apply { timeInMillis = epochMs }
-    return fmt.format(calendar)
+    val locale = LocalContext.current.appLocale()
+    val formatter = remember(locale) {
+        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, locale)
+    }
+    return formatter.format(Date(epochMs))
+}
+
+@Composable
+private fun formatDistanceKm(distanceMeters: Double): String {
+    val locale = LocalContext.current.appLocale()
+    return remember(locale, distanceMeters) {
+        String.format(locale, "%.2f km", distanceMeters / 1000.0)
+    }
 }
 
 private fun Context.isDebuggableApp(): Boolean =
     applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+
+private fun Context.appLocale(): Locale {
+    val configuration = resources.configuration
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        configuration.locales[0]
+    } else {
+        @Suppress("DEPRECATION")
+        configuration.locale
+    }
+}
 
 private fun formatDurationWords(context: Context, totalSec: Int): String {
     val minutes = totalSec / 60
