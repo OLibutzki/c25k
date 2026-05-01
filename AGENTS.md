@@ -45,6 +45,15 @@
 - APK output:
   - `app/build/outputs/apk/debug/app-debug.apk`
 
+## Verification Rules
+- Before any `git commit` or `git push`, run the repository's standard verification unless the user explicitly says to skip it.
+- For Android code changes in this repo, the minimum required verification is:
+  - `GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleDebug`
+  - `GRADLE_USER_HOME=$PWD/.gradle ./gradlew testDebugUnitTest`
+- `:app:compileDebugKotlin` alone is not sufficient to claim a change is verified.
+- If Gradle fails in the sandbox with `Could not determine a usable wildcard IP for this machine`, rerun the same verification outside the sandbox before finishing.
+- If a change modifies a shared model, constructor, data class, DAO contract, or repository API, update all affected call sites, including tests.
+
 ## Important Constraints / Decisions
 - MapLibre was replaced with osmdroid due to repository resolution issues in this environment.
 - No cloud sync/export in v1.
