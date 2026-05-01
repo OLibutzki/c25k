@@ -72,9 +72,10 @@
     <string name="total_run_minutes">%1$d Min. Laufen</string>
     <string name="workout_metrics_subtitle">Behalte jedes Intervall und dein Tempo im Blick.</string>
     <string name="route_map">Routenkarte</string>
-    <string name="route_map_subtitle">Lauf- und Gehabschnitte werden farblich getrennt angezeigt.</string>
+    <string name="route_map_subtitle">Lauf- und Gehabschnitte werden farblich getrennt angezeigt. Wähle eine Phase, um nur deren Route zu sehen.</string>
     <string name="session_breakdown">Einheitenaufschlüsselung</string>
-    <string name="session_breakdown_subtitle">Jeder aufgezeichnete Abschnitt mit Tempo und Distanz.</string>
+    <string name="session_breakdown_subtitle">Tippe auf eine Phase, um nur diesen Routenabschnitt auf der Karte hervorzuheben.</string>
+    <string name="all_phases">Alle Phasen</string>
     <string name="language_subtitle">Wähle die Sprache für Oberfläche und künftige Sprachansagen.</string>
     <string name="warmup_cooldown">Aufwärmen und Cooldown</string>
     <string name="warmup_cooldown_subtitle">Passe den Gehabschnitt am Anfang und Ende an. Diese Phase wird weder in Route noch Tempoberechnung einbezogen.</string>

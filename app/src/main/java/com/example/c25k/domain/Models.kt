@@ -66,6 +66,7 @@ data class WorkoutSummary(
 )
 
 data class SegmentStats(
+    val segmentOrder: Int,
     val type: SegmentType,
     val startEpochMs: Long,
     val endEpochMs: Long,
@@ -75,6 +76,7 @@ data class SegmentStats(
 )
 
 data class TrackPointModel(
+    val segmentOrder: Int,
     val latitude: Double,
     val longitude: Double,
     val timestampEpochMs: Long,

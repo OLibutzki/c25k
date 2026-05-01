@@ -236,19 +236,20 @@ class WorkoutForegroundService : Service() {
 
             val segments = session.segments
                 .filter { session.isTrackedSegment(it.segmentOrder) }
-                .map { segment ->
-                val startSec = session.segments.take(segment.segmentOrder).sumOf { it.durationSec }.toLong()
-                val endSec = startSec + segment.durationSec
-                val distance = segmentDistances[segment.segmentOrder] ?: 0.0
-                SegmentStats(
-                    type = segment.type,
-                    startEpochMs = startedAtEpochMs + startSec * 1000L,
-                    endEpochMs = startedAtEpochMs + endSec * 1000L,
-                    durationSec = segment.durationSec.toLong(),
-                    distanceMeters = distance,
-                    paceSecPerKm = WorkoutMath.paceSecPerKm(distance, segment.durationSec.toLong())
-                )
-            }
+                .mapIndexed { index, segment ->
+                    val startSec = session.segments.take(segment.segmentOrder).sumOf { it.durationSec }.toLong()
+                    val endSec = startSec + segment.durationSec
+                    val distance = segmentDistances[segment.segmentOrder] ?: 0.0
+                    SegmentStats(
+                        segmentOrder = index,
+                        type = segment.type,
+                        startEpochMs = startedAtEpochMs + startSec * 1000L,
+                        endEpochMs = startedAtEpochMs + endSec * 1000L,
+                        durationSec = segment.durationSec.toLong(),
+                        distanceMeters = distance,
+                        paceSecPerKm = WorkoutMath.paceSecPerKm(distance, segment.durationSec.toLong())
+                    )
+                }
             val trackedElapsedSec = runDurationSec + walkDurationSec
 
             val request = WorkoutPersistRequest(

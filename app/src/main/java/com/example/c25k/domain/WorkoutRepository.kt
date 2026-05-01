@@ -73,10 +73,10 @@ class WorkoutRepository(
                 )
             )
 
-            val segmentEntities = request.segments.mapIndexed { index, seg ->
+            val segmentEntities = request.segments.map { seg ->
                 WorkoutSegmentEntity(
                     workoutId = workoutId,
-                    segmentOrder = index,
+                    segmentOrder = seg.segmentOrder,
                     type = seg.type,
                     startEpochMs = seg.startEpochMs,
                     endEpochMs = seg.endEpochMs,
@@ -115,6 +115,7 @@ class WorkoutRepository(
         val session = planDao.getSession(workout.sessionId)
         val segments = workoutDao.getWorkoutSegments(workoutId).map {
             SegmentStats(
+                segmentOrder = it.segmentOrder,
                 type = it.type,
                 startEpochMs = it.startEpochMs,
                 endEpochMs = it.endEpochMs,
@@ -125,6 +126,7 @@ class WorkoutRepository(
         }
         val points = workoutDao.getTrackPoints(workoutId).map {
             TrackPointModel(
+                segmentOrder = it.segmentOrder,
                 latitude = it.latitude,
                 longitude = it.longitude,
                 timestampEpochMs = it.timestampEpochMs,

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +33,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
@@ -1062,6 +1064,12 @@ private fun WorkoutDetailScaffold(
             )
         } else {
             val current = detail!!
+            var selectedSegmentOrder by remember(current.workout.id) { mutableStateOf<Int?>(null) }
+            val filteredPoints = remember(current.points, selectedSegmentOrder) {
+                current.points.filter { point ->
+                    selectedSegmentOrder == null || point.segmentOrder == selectedSegmentOrder
+                }
+            }
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -1114,7 +1122,36 @@ private fun WorkoutDetailScaffold(
                                 title = stringResource(R.string.route_map),
                                 subtitle = stringResource(R.string.route_map_subtitle)
                             )
-                            RouteMap(points = current.points)
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                item {
+                                    FilterChip(
+                                        selected = selectedSegmentOrder == null,
+                                        onClick = { selectedSegmentOrder = null },
+                                        label = { Text(stringResource(R.string.all_phases)) }
+                                    )
+                                }
+                                items(current.segments, key = { it.segmentOrder }) { seg ->
+                                    FilterChip(
+                                        selected = selectedSegmentOrder == seg.segmentOrder,
+                                        onClick = {
+                                            selectedSegmentOrder = if (selectedSegmentOrder == seg.segmentOrder) {
+                                                null
+                                            } else {
+                                                seg.segmentOrder
+                                            }
+                                        },
+                                        label = {
+                                            Text(
+                                                stringResource(
+                                                    R.string.phase_label,
+                                                    seg.segmentOrder + 1
+                                                )
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                            RouteMap(points = filteredPoints)
                         }
                     }
                 }
@@ -1124,14 +1161,27 @@ private fun WorkoutDetailScaffold(
                         subtitle = stringResource(R.string.session_breakdown_subtitle)
                     )
                 }
-                items(current.segments) { seg ->
+                items(current.segments, key = { it.segmentOrder }) { seg ->
                     AppCard {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedSegmentOrder = if (selectedSegmentOrder == seg.segmentOrder) {
+                                        null
+                                    } else {
+                                        seg.segmentOrder
+                                    }
+                                },
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    text = stringResource(R.string.phase_label, seg.segmentOrder + 1),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                                 Text(
                                     text = segmentTypeLabel(seg.type),
                                     style = MaterialTheme.typography.titleMedium,
@@ -1143,9 +1193,21 @@ private fun WorkoutDetailScaffold(
                                 )
                             }
                             StatusBadge(
-                                label = "${"%.2f".format(seg.distanceMeters / 1000.0)} km",
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = MaterialTheme.colorScheme.onSurface
+                                label = if (selectedSegmentOrder == seg.segmentOrder) {
+                                    stringResource(R.string.selected)
+                                } else {
+                                    "${"%.2f".format(seg.distanceMeters / 1000.0)} km"
+                                },
+                                color = if (selectedSegmentOrder == seg.segmentOrder) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                },
+                                contentColor = if (selectedSegmentOrder == seg.segmentOrder) {
+                                    MaterialTheme.colorScheme.onPrimary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
                             )
                         }
                     }
