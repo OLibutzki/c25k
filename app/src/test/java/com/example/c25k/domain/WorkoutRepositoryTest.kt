@@ -80,6 +80,7 @@ class WorkoutRepositoryTest {
         avgPaceSecPerKm = 360.0,
         segments = listOf(
             SegmentStats(
+                segmentOrder = 0,
                 type = SegmentType.RUN,
                 startEpochMs = startedAt,
                 endEpochMs = completedAt,
