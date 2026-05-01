@@ -6,45 +6,58 @@ import org.junit.Test
 
 class PlanSessionProgressTest {
     @Test
-    fun nextSuggestedSession_returnsFirstPending() {
+    fun nextSessionFromPlanProgress_returnsFirstSession_whenNothingCompleted() {
         val sessions = listOf(
-            session(id = 1, status = PlanSessionStatus.SKIPPED),
-            session(id = 2, status = PlanSessionStatus.PENDING),
-            session(id = 3, status = PlanSessionStatus.PENDING)
+            session(id = 1, orderInPlan = 1, status = PlanSessionStatus.PENDING),
+            session(id = 2, orderInPlan = 2, status = PlanSessionStatus.PENDING),
+            session(id = 3, orderInPlan = 3, status = PlanSessionStatus.PENDING)
         )
 
-        assertEquals(2L, sessions.nextSuggestedSession()?.id)
+        assertEquals(1L, sessions.nextSessionFromPlanProgress()?.id)
     }
 
     @Test
-    fun latestCompletedSession_returnsMostRecentCompletion() {
+    fun nextSessionFromPlanProgress_returnsSessionAfterFurthestCompleted() {
         val sessions = listOf(
-            session(id = 1, status = PlanSessionStatus.COMPLETED, completedAt = 1000L),
-            session(id = 2, status = PlanSessionStatus.COMPLETED, completedAt = 3000L),
-            session(id = 3, status = PlanSessionStatus.SKIPPED)
+            session(id = 1, orderInPlan = 1, status = PlanSessionStatus.PENDING),
+            session(id = 2, orderInPlan = 2, status = PlanSessionStatus.COMPLETED, completedAt = 1000L),
+            session(id = 3, orderInPlan = 3, status = PlanSessionStatus.PENDING)
         )
 
-        assertEquals(2L, sessions.latestCompletedSession()?.id)
+        assertEquals(3L, sessions.nextSessionFromPlanProgress()?.id)
     }
 
     @Test
-    fun latestCompletedSession_returnsNullWithoutCompletedSessions() {
+    fun furthestCompletedSession_returnsHighestOrderCompleted() {
         val sessions = listOf(
-            session(id = 1, status = PlanSessionStatus.PENDING),
-            session(id = 2, status = PlanSessionStatus.SKIPPED)
+            session(id = 1, orderInPlan = 1, status = PlanSessionStatus.COMPLETED, completedAt = 1000L),
+            session(id = 2, orderInPlan = 2, status = PlanSessionStatus.PENDING),
+            session(id = 3, orderInPlan = 3, status = PlanSessionStatus.COMPLETED, completedAt = 3000L)
         )
 
-        assertNull(sessions.latestCompletedSession())
+        assertEquals(3L, sessions.furthestCompletedSession()?.id)
+    }
+
+    @Test
+    fun furthestCompletedSession_returnsNullWithoutCompletedSessions() {
+        val sessions = listOf(
+            session(id = 1, orderInPlan = 1, status = PlanSessionStatus.PENDING),
+            session(id = 2, orderInPlan = 2, status = PlanSessionStatus.PENDING)
+        )
+
+        assertNull(sessions.furthestCompletedSession())
     }
 
     private fun session(
         id: Long,
+        orderInPlan: Int,
         status: PlanSessionStatus,
         completedAt: Long? = null
     ) = PlanSessionModel(
         id = id,
         week = 1,
         day = id.toInt(),
+        orderInPlan = orderInPlan,
         segments = emptyList(),
         status = status,
         latestCompletedWorkoutId = completedAt?.let { id * 10 },

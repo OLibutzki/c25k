@@ -56,6 +56,7 @@ class WorkoutRepositoryTest {
             id = 1,
             week = 1,
             day = 1,
+            orderInPlan = 1,
             segments = listOf(
                 PlanSegmentModel(segmentOrder = 0, type = SegmentType.WALK, durationSec = 5),
                 PlanSegmentModel(segmentOrder = 1, type = SegmentType.RUN, durationSec = 60)
@@ -112,9 +113,6 @@ private class FakePlanDao(
 
     override fun observeSessions(): Flow<List<PlanSessionEntity>> = sessionFlow
 
-    override suspend fun getNextSession(): PlanSessionEntity? =
-        sessionMap.values.filter { it.status == PlanSessionStatus.PENDING }.minByOrNull { it.orderInPlan }
-
     override suspend fun getSession(id: Long): PlanSessionEntity? = sessionMap[id]
 
     override suspend fun getSegmentsForSession(sessionId: Long): List<PlanSegmentEntity> = emptyList()
@@ -131,12 +129,6 @@ private class FakePlanDao(
             latestCompletedWorkoutId = workoutId,
             latestCompletedAtEpochMs = completedAtEpochMs
         )
-        publish()
-    }
-
-    override suspend fun updateStatus(sessionId: Long, status: PlanSessionStatus) {
-        val current = sessionMap.getValue(sessionId)
-        sessionMap[sessionId] = current.copy(status = status)
         publish()
     }
 
