@@ -45,6 +45,14 @@
 - APK output:
   - `app/build/outputs/apk/debug/app-debug.apk`
 
+## Device Install Workflow
+- Preferred install method for manual testing is wireless `adb` to the user's physical device.
+- Do not assume an existing APK artifact is current; rebuild with `GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleDebug` before installing unless the user explicitly asks to reuse an existing build.
+- Prefer installing the freshly built APK with `adb install -r app/build/outputs/apk/debug/app-debug.apk` to an already paired and connected wireless device.
+- Keep device-specific connection details ephemeral: do not write pairing codes, IP addresses, ports, or other credentials into repository files, including `AGENTS.md`.
+- If the wireless device is not currently connected, ask the user for the current Wireless debugging pairing/connect details and use those only for the current session.
+- After installing, verify the package is present on-device (`com.example.c25k`) before reporting success.
+
 ## Verification Rules
 - Before any `git commit` or `git push`, run the repository's standard verification unless the user explicitly says to skip it.
 - For Android code changes in this repo, the minimum required verification is:
