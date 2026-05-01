@@ -1,8 +1,49 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
 }
+
+fun semVerVersionCode(version: String): Int {
+    val match = Regex("""^(\d+)\.(\d+)\.(\d+)$""").matchEntire(version)
+        ?: throw GradleException("Expected release version in X.Y.Z format, got '$version'")
+    val (major, minor, patch) = match.destructured
+    return major.toInt() * 10000 + minor.toInt() * 100 + patch.toInt()
+}
+
+fun loadKeystoreProperties(rootDir: File): Properties {
+    val properties = Properties()
+    val file = rootDir.resolve("keystore.properties")
+    if (file.exists()) {
+        file.inputStream().use(properties::load)
+    }
+    return properties
+}
+
+val releaseVersionName = providers.gradleProperty("releaseVersionName").orNull
+val resolvedVersionName = releaseVersionName ?: "0.1.0-dev"
+val resolvedVersionCode = releaseVersionName?.let(::semVerVersionCode) ?: 1
+val keystoreProperties = loadKeystoreProperties(rootDir)
+val releaseStoreFile = providers.gradleProperty("releaseStoreFile").orNull
+    ?: System.getenv("RELEASE_STORE_FILE")
+    ?: keystoreProperties.getProperty("storeFile")
+val releaseStorePassword = providers.gradleProperty("releaseStorePassword").orNull
+    ?: System.getenv("RELEASE_STORE_PASSWORD")
+    ?: keystoreProperties.getProperty("storePassword")
+val releaseKeyAlias = providers.gradleProperty("releaseKeyAlias").orNull
+    ?: System.getenv("RELEASE_KEY_ALIAS")
+    ?: keystoreProperties.getProperty("keyAlias")
+val releaseKeyPassword = providers.gradleProperty("releaseKeyPassword").orNull
+    ?: System.getenv("RELEASE_KEY_PASSWORD")
+    ?: keystoreProperties.getProperty("keyPassword")
+val hasReleaseSigningConfig = listOf(
+    releaseStoreFile,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword
+).all { !it.isNullOrBlank() }
 
 android {
     namespace = "com.example.c25k"
@@ -12,8 +53,8 @@ android {
         applicationId = "com.example.c25k"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = resolvedVersionCode
+        versionName = resolvedVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -21,9 +62,23 @@ android {
         }
     }
 
+    signingConfigs {
+        if (hasReleaseSigningConfig) {
+            create("release") {
+                storeFile = file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (hasReleaseSigningConfig) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
