@@ -5,6 +5,8 @@ import android.content.pm.ApplicationInfo
 import android.icu.text.SimpleDateFormat
 import android.icu.util.Calendar
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +30,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.activity.compose.BackHandler
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CardColors
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -1162,7 +1165,21 @@ private fun WorkoutDetailScaffold(
                     )
                 }
                 items(current.segments, key = { it.segmentOrder }) { seg ->
-                    AppCard {
+                    val isSelected = selectedSegmentOrder == seg.segmentOrder
+                    AppCard(
+                        colors = CardDefaults.elevatedCardColors(
+                            containerColor = if (isSelected) {
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                            } else {
+                                MaterialTheme.colorScheme.surface
+                            }
+                        ),
+                        border = if (isSelected) {
+                            BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f))
+                        } else {
+                            null
+                        }
+                    ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1180,7 +1197,12 @@ private fun WorkoutDetailScaffold(
                                 Text(
                                     text = segmentSummaryLabel(seg.type, seg.durationSec),
                                     style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (isSelected) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    }
                                 )
                                 Text(
                                     text = formatPace(seg.paceSecPerKm),
@@ -1188,18 +1210,14 @@ private fun WorkoutDetailScaffold(
                                 )
                             }
                             StatusBadge(
-                                label = if (selectedSegmentOrder == seg.segmentOrder) {
-                                    stringResource(R.string.selected)
-                                } else {
-                                    "${"%.2f".format(seg.distanceMeters / 1000.0)} km"
-                                },
-                                color = if (selectedSegmentOrder == seg.segmentOrder) {
-                                    MaterialTheme.colorScheme.primary
+                                label = "${"%.2f".format(seg.distanceMeters / 1000.0)} km",
+                                color = if (isSelected) {
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
                                 } else {
                                     MaterialTheme.colorScheme.surfaceVariant
                                 },
-                                contentColor = if (selectedSegmentOrder == seg.segmentOrder) {
-                                    MaterialTheme.colorScheme.onPrimary
+                                contentColor = if (isSelected) {
+                                    MaterialTheme.colorScheme.primary
                                 } else {
                                     MaterialTheme.colorScheme.onSurface
                                 }
@@ -1444,11 +1462,23 @@ private fun LanguageOption(
 @Composable
 private fun AppCard(
     modifier: Modifier = Modifier,
+    colors: CardColors = CardDefaults.elevatedCardColors(
+        containerColor = MaterialTheme.colorScheme.surface
+    ),
+    border: BorderStroke? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     ElevatedCard(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+        modifier = modifier
+            .fillMaxWidth()
+            .then(
+                if (border != null) {
+                    Modifier.border(border, MaterialTheme.shapes.large)
+                } else {
+                    Modifier
+                }
+            ),
+        colors = colors,
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
