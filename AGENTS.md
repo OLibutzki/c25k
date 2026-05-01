@@ -54,7 +54,9 @@
 - After installing, verify the package is present on-device (`com.example.c25k`) before reporting success.
 
 ## Verification Rules
-- Before any `git commit` or `git push`, run the repository's standard verification unless the user explicitly says to skip it.
+- Before `git commit` or `git push`, use judgment instead of running verification by default.
+- Run the repository's standard verification when the change could plausibly break the build, tests, packaging, resources, manifests, dependency graph, generated code, or affected call sites.
+- Small documentation-only or clearly isolated non-build-affecting changes do not require rerunning the full verification suite before commit.
 - For Android code changes in this repo, the minimum required verification is:
   - `GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleDebug`
   - `GRADLE_USER_HOME=$PWD/.gradle ./gradlew testDebugUnitTest`
