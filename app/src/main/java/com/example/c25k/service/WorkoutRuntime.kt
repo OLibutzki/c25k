@@ -48,6 +48,12 @@ object WorkoutRuntime {
         _state.value = state
     }
 
+    fun clearCompletion() {
+        if (_state.value.phase == WorkoutPhase.COMPLETED) {
+            _state.value = WorkoutState(phase = WorkoutPhase.IDLE)
+        }
+    }
+
     fun startService(context: Context, action: String, sessionId: Long? = null) {
         val intent = Intent(context, WorkoutForegroundService::class.java).apply {
             this.action = action

@@ -186,6 +186,7 @@ fun C25kApp(container: AppContainer, application: C25kApplication) {
                         container = container,
                         workoutId = workoutId,
                         onBack = {
+                            WorkoutRuntime.clearCompletion()
                             navController.navigate("home") {
                                 popUpTo("home") { inclusive = true }
                                 launchSingleTop = true
