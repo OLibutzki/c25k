@@ -122,6 +122,18 @@ fun C25kApp(container: AppContainer, application: C25kApplication) {
                 }
             }
 
+            LaunchedEffect(workoutState.phase, currentRoute) {
+                if (
+                    workoutState.phase == WorkoutPhase.IDLE &&
+                    currentRoute == "live"
+                ) {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            }
+
             LaunchedEffect(workoutState.phase, workoutState.completedWorkoutId, currentRoute) {
                 val completedWorkoutId = workoutState.completedWorkoutId
                 if (
