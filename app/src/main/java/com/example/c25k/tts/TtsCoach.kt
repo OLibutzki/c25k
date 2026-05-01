@@ -51,7 +51,7 @@ class TtsCoach(private val context: Context) : TextToSpeech.OnInitListener {
         if (result == TextToSpeech.ERROR) playFallbackTone()
     }
 
-    fun playPhaseStartBeep() {
+    fun playSegmentStartBeep() {
         toneGenerator?.startTone(ToneGenerator.TONE_PROP_BEEP, 150)
     }
 

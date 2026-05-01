@@ -88,7 +88,7 @@ import com.example.c25k.domain.WorkoutSummary
 import com.example.c25k.domain.furthestCompletedSession
 import com.example.c25k.domain.nextSessionFromPlanProgress
 import com.example.c25k.domain.withWarmupCooldownDuration
-import com.example.c25k.service.WorkoutPhase
+import com.example.c25k.service.WorkoutStatus
 import com.example.c25k.service.WorkoutRuntime
 import com.example.c25k.ui.theme.C25kTheme
 import kotlinx.coroutines.launch
@@ -111,7 +111,7 @@ fun C25kApp(container: AppContainer, application: C25kApplication) {
             val workoutState by WorkoutRuntime.state.collectAsStateWithLifecycle()
             val backStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = backStackEntry?.destination?.route
-            val hasActiveWorkout = workoutState.phase == WorkoutPhase.RUNNING || workoutState.phase == WorkoutPhase.PAUSED
+            val hasActiveWorkout = workoutState.status == WorkoutStatus.RUNNING || workoutState.status == WorkoutStatus.PAUSED
 
             LaunchedEffect(hasActiveWorkout, currentRoute) {
                 if (hasActiveWorkout && currentRoute != "live") {
@@ -122,9 +122,9 @@ fun C25kApp(container: AppContainer, application: C25kApplication) {
                 }
             }
 
-            LaunchedEffect(workoutState.phase, currentRoute) {
+            LaunchedEffect(workoutState.status, currentRoute) {
                 if (
-                    workoutState.phase == WorkoutPhase.IDLE &&
+                    workoutState.status == WorkoutStatus.IDLE &&
                     currentRoute == "live"
                 ) {
                     navController.navigate("home") {
@@ -134,10 +134,10 @@ fun C25kApp(container: AppContainer, application: C25kApplication) {
                 }
             }
 
-            LaunchedEffect(workoutState.phase, workoutState.completedWorkoutId, currentRoute) {
+            LaunchedEffect(workoutState.status, workoutState.completedWorkoutId, currentRoute) {
                 val completedWorkoutId = workoutState.completedWorkoutId
                 if (
-                    workoutState.phase == WorkoutPhase.COMPLETED &&
+                    workoutState.status == WorkoutStatus.COMPLETED &&
                     completedWorkoutId != null &&
                     currentRoute != "summary/{workoutId}"
                 ) {
@@ -624,7 +624,7 @@ private fun LiveWorkoutScreen(onDone: () -> Unit) {
     val state by WorkoutRuntime.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var pendingConfirmation by remember { mutableStateOf<WorkoutActionConfirmation?>(null) }
-    val hasActiveWorkout = state.phase == WorkoutPhase.RUNNING || state.phase == WorkoutPhase.PAUSED
+    val hasActiveWorkout = state.status == WorkoutStatus.RUNNING || state.status == WorkoutStatus.PAUSED
 
     BackHandler(enabled = hasActiveWorkout) {
         pendingConfirmation = WorkoutActionConfirmation.STOP
@@ -733,7 +733,7 @@ private fun LiveWorkoutScreen(onDone: () -> Unit) {
                                 }
                             }
                             StatusBadge(
-                                label = state.phase.name,
+                                label = workoutStatusLabel(state.status),
                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                                 contentColor = MaterialTheme.colorScheme.primary
                             )
@@ -786,26 +786,25 @@ private fun LiveWorkoutScreen(onDone: () -> Unit) {
             if (state.segments.isNotEmpty()) {
                 item {
                     SectionHeader(
-                        title = stringResource(R.string.phase_timeline),
+                        title = stringResource(R.string.workout_progress),
                         subtitle = stringResource(R.string.workout_metrics_subtitle)
                     )
                 }
                 items(state.segments, key = { it.segmentOrder }) { segment ->
                     val timelineStatus = when {
-                        segment.segmentOrder < state.currentSegmentOrder -> PhaseTimelineStatus.COMPLETED
-                        segment.segmentOrder == state.currentSegmentOrder -> PhaseTimelineStatus.CURRENT
-                        else -> PhaseTimelineStatus.UPCOMING
+                        segment.segmentOrder < state.currentSegmentOrder -> TimelineStatus.COMPLETED
+                        segment.segmentOrder == state.currentSegmentOrder -> TimelineStatus.CURRENT
+                        else -> TimelineStatus.UPCOMING
                     }
-                    val progress = if (timelineStatus == PhaseTimelineStatus.CURRENT && segment.durationSec > 0) {
+                    val progress = if (timelineStatus == TimelineStatus.CURRENT && segment.durationSec > 0) {
                         ((segment.durationSec - state.segmentRemainingSec).toFloat() / segment.durationSec.toFloat())
                             .coerceIn(0f, 1f)
-                    } else if (timelineStatus == PhaseTimelineStatus.COMPLETED) {
+                    } else if (timelineStatus == TimelineStatus.COMPLETED) {
                         1f
                     } else {
                         0f
                     }
-                    PhaseTimelineItem(
-                        segmentNumber = segment.segmentOrder + 1,
+                    TimelineItem(
                         segmentType = segment.type,
                         durationSec = segment.durationSec,
                         status = timelineStatus,
@@ -815,7 +814,7 @@ private fun LiveWorkoutScreen(onDone: () -> Unit) {
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (state.phase == WorkoutPhase.RUNNING) {
+                    if (state.status == WorkoutStatus.RUNNING) {
                         Button(
                             onClick = { pendingConfirmation = WorkoutActionConfirmation.PAUSE },
                             modifier = Modifier.weight(1f)
@@ -823,7 +822,7 @@ private fun LiveWorkoutScreen(onDone: () -> Unit) {
                             Text(stringResource(R.string.pause))
                         }
                     }
-                    if (state.phase == WorkoutPhase.PAUSED) {
+                    if (state.status == WorkoutStatus.PAUSED) {
                         FilledTonalButton(
                             onClick = { WorkoutRuntime.startService(context, WorkoutRuntime.ACTION_RESUME) },
                             modifier = Modifier.weight(1f)
@@ -839,7 +838,7 @@ private fun LiveWorkoutScreen(onDone: () -> Unit) {
                     }
                 }
             }
-            if (state.phase == WorkoutPhase.COMPLETED || state.phase == WorkoutPhase.IDLE) {
+            if (state.status == WorkoutStatus.COMPLETED || state.status == WorkoutStatus.IDLE) {
                 item {
                     Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.history))
@@ -853,7 +852,7 @@ private fun LiveWorkoutScreen(onDone: () -> Unit) {
     }
 }
 
-private enum class PhaseTimelineStatus {
+private enum class TimelineStatus {
     COMPLETED,
     CURRENT,
     UPCOMING
@@ -865,23 +864,22 @@ private enum class WorkoutActionConfirmation {
 }
 
 @Composable
-private fun PhaseTimelineItem(
-    segmentNumber: Int,
+private fun TimelineItem(
     segmentType: SegmentType,
     durationSec: Int,
-    status: PhaseTimelineStatus,
+    status: TimelineStatus,
     progress: Float
 ) {
     val context = LocalContext.current
     val accentColor = when (status) {
-        PhaseTimelineStatus.COMPLETED -> MaterialTheme.colorScheme.tertiary
-        PhaseTimelineStatus.CURRENT -> MaterialTheme.colorScheme.primary
-        PhaseTimelineStatus.UPCOMING -> MaterialTheme.colorScheme.outline
+        TimelineStatus.COMPLETED -> MaterialTheme.colorScheme.tertiary
+        TimelineStatus.CURRENT -> MaterialTheme.colorScheme.primary
+        TimelineStatus.UPCOMING -> MaterialTheme.colorScheme.outline
     }
     val statusLabel = when (status) {
-        PhaseTimelineStatus.COMPLETED -> stringResource(R.string.phase_completed)
-        PhaseTimelineStatus.CURRENT -> stringResource(R.string.phase_current)
-        PhaseTimelineStatus.UPCOMING -> stringResource(R.string.phase_up_next)
+        TimelineStatus.COMPLETED -> stringResource(R.string.segment_completed)
+        TimelineStatus.CURRENT -> stringResource(R.string.segment_current)
+        TimelineStatus.UPCOMING -> stringResource(R.string.segment_up_next)
     }
 
     AppCard {
@@ -913,12 +911,7 @@ private fun PhaseTimelineItem(
             }
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = stringResource(R.string.phase_label, segmentNumber),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = segmentTypeLabel(segmentType),
+                    text = segmentSummaryLabel(segmentType, durationSec),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -1139,7 +1132,7 @@ private fun WorkoutDetailScaffold(
                                     FilterChip(
                                         selected = selectedSegmentOrder == null,
                                         onClick = { selectedSegmentOrder = null },
-                                        label = { Text(stringResource(R.string.all_phases)) }
+                                        label = { Text(stringResource(R.string.full_workout)) }
                                     )
                                 }
                                 items(current.segments, key = { it.segmentOrder }) { seg ->
@@ -1153,12 +1146,7 @@ private fun WorkoutDetailScaffold(
                                             }
                                         },
                                         label = {
-                                            Text(
-                                                stringResource(
-                                                    R.string.phase_label,
-                                                    seg.segmentOrder + 1
-                                                )
-                                            )
+                                            Text(segmentSummaryLabel(seg.type, seg.durationSec))
                                         }
                                     )
                                 }
@@ -1190,12 +1178,7 @@ private fun WorkoutDetailScaffold(
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(
-                                    text = stringResource(R.string.phase_label, seg.segmentOrder + 1),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = segmentTypeLabel(seg.type),
+                                    text = segmentSummaryLabel(seg.type, seg.durationSec),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold
                                 )
@@ -1609,6 +1592,16 @@ private fun planStatusLabel(session: PlanSessionModel, isNext: Boolean): String 
 }
 
 @Composable
+private fun workoutStatusLabel(status: WorkoutStatus): String {
+    return when (status) {
+        WorkoutStatus.IDLE -> stringResource(R.string.status_idle)
+        WorkoutStatus.RUNNING -> stringResource(R.string.status_running)
+        WorkoutStatus.PAUSED -> stringResource(R.string.status_paused)
+        WorkoutStatus.COMPLETED -> stringResource(R.string.status_completed_workout)
+    }
+}
+
+@Composable
 private fun planStatusColor(status: PlanSessionStatus, isNext: Boolean): Color {
     return when {
         isNext && status == PlanSessionStatus.PENDING -> MaterialTheme.colorScheme.primary
@@ -1633,6 +1626,16 @@ private fun segmentTypeLabel(type: SegmentType): String {
         SegmentType.WARMUP -> stringResource(R.string.warmup)
         SegmentType.COOLDOWN -> stringResource(R.string.cooldown)
     }
+}
+
+@Composable
+private fun segmentSummaryLabel(type: SegmentType, durationSec: Int): String {
+    return "${segmentTypeLabel(type)} - ${formatShortDuration(durationSec)}"
+}
+
+@Composable
+private fun segmentSummaryLabel(type: SegmentType, durationSec: Long): String {
+    return segmentSummaryLabel(type, durationSec.toInt())
 }
 
 private fun formatClock(totalSec: Long): String {

@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-enum class WorkoutPhase {
+enum class WorkoutStatus {
     IDLE,
     RUNNING,
     PAUSED,
@@ -16,7 +16,7 @@ enum class WorkoutPhase {
 }
 
 data class WorkoutState(
-    val phase: WorkoutPhase = WorkoutPhase.IDLE,
+    val status: WorkoutStatus = WorkoutStatus.IDLE,
     val completedWorkoutId: Long? = null,
     val sessionId: Long? = null,
     val week: Int? = null,
@@ -49,8 +49,8 @@ object WorkoutRuntime {
     }
 
     fun clearCompletion() {
-        if (_state.value.phase == WorkoutPhase.COMPLETED) {
-            _state.value = WorkoutState(phase = WorkoutPhase.IDLE)
+        if (_state.value.status == WorkoutStatus.COMPLETED) {
+            _state.value = WorkoutState(status = WorkoutStatus.IDLE)
         }
     }
 

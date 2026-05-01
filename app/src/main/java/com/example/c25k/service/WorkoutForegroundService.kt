@@ -87,7 +87,7 @@ class WorkoutForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun startWorkout(sessionId: Long) {
-        if (WorkoutRuntime.state.value.phase == WorkoutPhase.RUNNING || WorkoutRuntime.state.value.phase == WorkoutPhase.PAUSED) {
+        if (WorkoutRuntime.state.value.status == WorkoutStatus.RUNNING || WorkoutRuntime.state.value.status == WorkoutStatus.PAUSED) {
             return
         }
         serviceScope.launch {
@@ -133,7 +133,7 @@ class WorkoutForegroundService : Service() {
         lastLocation = null
         pointCaptures.clear()
         segmentDistances.clear()
-        publishState(WorkoutPhase.RUNNING)
+        publishState(WorkoutStatus.RUNNING)
     }
 
     private fun startTimerLoop() {
@@ -166,7 +166,7 @@ class WorkoutForegroundService : Service() {
                         return@launch
                     }
                 }
-                publishState(WorkoutPhase.RUNNING)
+                publishState(WorkoutStatus.RUNNING)
             }
         }
     }
@@ -186,7 +186,7 @@ class WorkoutForegroundService : Service() {
         if (location.accuracy > 50f) return
         if (!currentSegmentTracked()) {
             lastLocation = null
-            publishState(if (paused) WorkoutPhase.PAUSED else WorkoutPhase.RUNNING)
+            publishState(if (paused) WorkoutStatus.PAUSED else WorkoutStatus.RUNNING)
             return
         }
 
@@ -213,19 +213,19 @@ class WorkoutForegroundService : Service() {
             segmentType = currentType()
         )
 
-        publishState(if (paused) WorkoutPhase.PAUSED else WorkoutPhase.RUNNING)
+        publishState(if (paused) WorkoutStatus.PAUSED else WorkoutStatus.RUNNING)
     }
 
     private fun pauseWorkout() {
-        if (WorkoutRuntime.state.value.phase != WorkoutPhase.RUNNING) return
+        if (WorkoutRuntime.state.value.status != WorkoutStatus.RUNNING) return
         paused = true
-        publishState(WorkoutPhase.PAUSED)
+        publishState(WorkoutStatus.PAUSED)
     }
 
     private fun resumeWorkout() {
-        if (WorkoutRuntime.state.value.phase != WorkoutPhase.PAUSED) return
+        if (WorkoutRuntime.state.value.status != WorkoutStatus.PAUSED) return
         paused = false
-        publishState(WorkoutPhase.RUNNING)
+        publishState(WorkoutStatus.RUNNING)
     }
 
     private fun finishWorkout() {
@@ -272,18 +272,18 @@ class WorkoutForegroundService : Service() {
         WorkoutRuntime.updateState(
             if (markComplete) {
                 WorkoutState(
-                    phase = WorkoutPhase.COMPLETED,
+                    status = WorkoutStatus.COMPLETED,
                     completedWorkoutId = completedWorkoutId
                 )
             } else {
-                WorkoutState(phase = WorkoutPhase.IDLE)
+                WorkoutState(status = WorkoutStatus.IDLE)
             }
         )
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
-    private fun publishState(phase: WorkoutPhase) {
+    private fun publishState(status: WorkoutStatus) {
         val runPace = WorkoutMath.paceSecPerKm(runDistanceMeters, runDurationSec)
         val walkPace = WorkoutMath.paceSecPerKm(walkDistanceMeters, walkDurationSec)
         val currentPace = if (currentSegmentTracked()) {
@@ -294,7 +294,7 @@ class WorkoutForegroundService : Service() {
 
         WorkoutRuntime.updateState(
             WorkoutState(
-                phase = phase,
+                status = status,
                 sessionId = planSession?.id,
                 week = planSession?.week,
                 day = planSession?.day,
@@ -327,7 +327,7 @@ class WorkoutForegroundService : Service() {
         val language = app.container.languageRepository.getLanguage()
         app.applyLocale(language)
         ttsCoach.setLanguage(language)
-        ttsCoach.playPhaseStartBeep()
+        ttsCoach.playSegmentStartBeep()
         delay(150L)
         ttsCoach.speak(app.container.cueFormatter.transitionCue(currentType(), remainingSec))
     }
@@ -352,14 +352,14 @@ class WorkoutForegroundService : Service() {
             servicePendingIntent(WorkoutRuntime.ACTION_STOP)
         )
         val hasActiveSegment = planSession != null
-        val currentPhaseLabel = notificationSegmentLabel()
+        val currentSegmentLabel = notificationSegmentLabel()
         val remainingTime = formatNotificationCountdown(remainingSec)
         val title = if (!hasActiveSegment) {
             getString(R.string.notification_title)
         } else if (paused) {
-            getString(R.string.notification_paused_title, currentPhaseLabel)
+            getString(R.string.notification_paused_title, currentSegmentLabel)
         } else {
-            currentPhaseLabel
+            currentSegmentLabel
         }
         val contentText = if (!hasActiveSegment) {
             getString(R.string.notification_text)
