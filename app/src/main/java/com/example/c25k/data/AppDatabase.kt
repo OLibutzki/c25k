@@ -15,7 +15,7 @@ import androidx.room.TypeConverters
         TrackPointEntity::class
     ],
     version = 5,
-    exportSchema = false
+    exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -29,7 +29,7 @@ abstract class AppDatabase : RoomDatabase() {
                 AppDatabase::class.java,
                 "c25k.db"
             )
-                .fallbackToDestructiveMigration()
+                .addMigrations(*DatabaseMigrations.ALL)
                 .build()
         }
     }

@@ -26,6 +26,8 @@
 - Service runtime: `app/src/main/java/com/example/c25k/service/WorkoutForegroundService.kt`
 - UI screens: `app/src/main/java/com/example/c25k/ui/C25kApp.kt`
 - Persistence: `app/src/main/java/com/example/c25k/data/*`
+- Migration guide: `docs/database-migrations.md`
+- Exported Room schemas: `app/schemas/com.example.c25k.data.AppDatabase/*`
 - Warm-up/cooldown setting: `app/src/main/java/com/example/c25k/settings/WarmupCooldownRepository.kt`
 - Localization: `app/src/main/res/values/strings.xml`, `app/src/main/res/values-de/strings.xml`
 
@@ -63,14 +65,15 @@
 - `:app:compileDebugKotlin` alone is not sufficient to claim a change is verified.
 - If Gradle fails in the sandbox with `Could not determine a usable wildcard IP for this machine`, rerun the same verification outside the sandbox before finishing.
 - If a change modifies a shared model, constructor, data class, DAO contract, or repository API, update all affected call sites, including tests.
+- If a change modifies the Room schema, increment `AppDatabase` version, add an explicit migration, regenerate `app/schemas/`, and verify the upgrade path before release.
 
 ## Important Constraints / Decisions
 - MapLibre was replaced with osmdroid due to repository resolution issues in this environment.
 - No cloud sync/export in v1.
 - Pace unit currently shown as `min/km`.
 - Language switches apply to UI and subsequent TTS cues.
-- Persisted local data can be discarded when needed.
-- Room currently uses destructive migration fallback; schema changes may discard existing local data instead of requiring explicit migrations.
+- Persisted workout and plan data should be treated as durable user data for app upgrades after `0.1.0`.
+- Room schema changes must preserve existing local data through explicit migrations; destructive fallback is not acceptable for released upgrades.
 
 ## Recommended Next Steps
 - Add instrumentation tests for service background behavior + location mocking.
