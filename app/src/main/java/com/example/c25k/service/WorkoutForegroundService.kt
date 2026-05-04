@@ -151,8 +151,12 @@ class WorkoutForegroundService : Service() {
                     if (currentType() == SegmentType.RUN) runDurationSec += 1 else walkDurationSec += 1
                 }
 
-                if (remainingSec == 10 && hasNextSegment()) {
-                    announcePrepareCue()
+                if (remainingSec == 10) {
+                    if (hasNextSegment()) {
+                        announcePrepareCue()
+                    } else if (currentSegmentTracked()) {
+                        announceWorkoutEndingSoonCue()
+                    }
                 }
 
                 remainingSec -= 1
@@ -332,6 +336,14 @@ class WorkoutForegroundService : Service() {
         ttsCoach.speak(app.container.cueFormatter.transitionCue(currentType(), remainingSec))
     }
 
+    private suspend fun announceWorkoutEndingSoonCue() {
+        val app = application as C25kApplication
+        val language = app.container.languageRepository.getLanguage()
+        app.applyLocale(language)
+        ttsCoach.setLanguage(language)
+        ttsCoach.speak(app.container.cueFormatter.endingSoonCue())
+    }
+
     private fun buildNotification(): Notification {
         val pauseResumeAction = if (paused) {
             NotificationCompat.Action(
@@ -425,7 +437,7 @@ class WorkoutForegroundService : Service() {
             SegmentType.RUN -> getString(R.string.running)
             SegmentType.WALK -> getString(R.string.walking)
             SegmentType.WARMUP -> getString(R.string.warmup)
-            SegmentType.COOLDOWN -> getString(R.string.cooldown)
+            SegmentType.COOLDOWN -> getString(R.string.walking)
         }
     }
 

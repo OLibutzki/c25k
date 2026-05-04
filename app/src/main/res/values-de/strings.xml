@@ -15,7 +15,6 @@
     <string name="running">Laufen</string>
     <string name="walking">Gehen</string>
     <string name="warmup">Aufwärmen</string>
-    <string name="cooldown">Cooldown</string>
     <string name="elapsed">Vergangen</string>
     <string name="remaining">Verbleibend</string>
     <string name="distance">Distanz</string>
@@ -36,12 +35,11 @@
     <string name="tts_start_running">Lauf jetzt für %1$s.</string>
     <string name="tts_start_walking">Geh jetzt für %1$s.</string>
     <string name="tts_start_warmup">Starte deinen Aufwärm-Gehabschnitt für %1$s.</string>
-    <string name="tts_start_cooldown">Starte deinen Cooldown-Gehabschnitt für %1$s.</string>
     <string name="tts_prepare_running">In 10 Sekunden laufen.</string>
     <string name="tts_prepare_walking">In 10 Sekunden gehen.</string>
     <string name="tts_prepare_warmup">In 10 Sekunden beginnt das Aufwärmen.</string>
-    <string name="tts_prepare_cooldown">In 10 Sekunden beginnt der Cooldown.</string>
-    <string name="tts_workout_complete">Glückwunsch! Du hast das Training abgeschlossen.</string>
+    <string name="tts_workout_ending_soon">Noch 10 Sekunden. Gleich geschafft.</string>
+    <string name="tts_workout_complete">Glückwunsch! Du hast dein Training abgeschlossen!</string>
     <string name="tts_language_missing">Gewählte Sprachausgabe nicht verfügbar. Tonsignal wird genutzt.</string>
     <string name="refresh">Aktualisieren</string>
     <string name="back">Zurück</string>
@@ -75,10 +73,9 @@
     <string name="session_breakdown_subtitle">Tippe auf ein Intervall, um nur diesen Routenabschnitt auf der Karte hervorzuheben.</string>
     <string name="full_workout">Gesamtes Training</string>
     <string name="language_subtitle">Wähle die Sprache für Oberfläche und künftige Sprachansagen.</string>
-    <string name="warmup_cooldown">Aufwärmen und Cooldown</string>
-    <string name="warmup_cooldown_subtitle">Passe den Gehabschnitt am Anfang und Ende an. Diese Abschnitte werden weder in Route noch Tempoberechnung einbezogen.</string>
-    <string name="warmup_cooldown_duration">Dauer für Aufwärmen und Cooldown</string>
-    <string name="warmup_cooldown_disabled">Deaktiviert</string>
+    <string name="warmup_subtitle">Passe den Gehabschnitt am Anfang an. Dieser Abschnitt wird weder in Route noch Tempoberechnung einbezogen.</string>
+    <string name="warmup_duration">Dauer für Aufwärmen</string>
+    <string name="warmup_disabled">Deaktiviert</string>
     <string name="decrease_one_minute">-1 Min.</string>
     <string name="increase_one_minute">+1 Min.</string>
     <string name="workout_debug_mode">Trainings-Debug-Modus</string>

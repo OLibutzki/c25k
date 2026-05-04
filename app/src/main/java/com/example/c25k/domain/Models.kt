@@ -122,16 +122,6 @@ fun PlanSessionModel.withWarmupCooldownDuration(durationSec: Int): PlanSessionMo
             )
         }
         addAll(segments.map { it.copy(countsTowardWorkout = true) })
-        if (normalizedDurationSec > 0) {
-            add(
-                PlanSegmentModel(
-                    segmentOrder = -1,
-                    type = SegmentType.COOLDOWN,
-                    durationSec = normalizedDurationSec,
-                    countsTowardWorkout = false
-                )
-            )
-        }
     }
 
     return copy(

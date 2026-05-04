@@ -721,7 +721,7 @@ private fun LiveWorkoutScreen(onDone: () -> Unit) {
                                         SegmentType.RUN -> stringResource(R.string.running)
                                         SegmentType.WALK -> stringResource(R.string.walking)
                                         SegmentType.WARMUP -> stringResource(R.string.warmup)
-                                        SegmentType.COOLDOWN -> stringResource(R.string.cooldown)
+                                        SegmentType.COOLDOWN -> stringResource(R.string.walking)
                                         null -> "-"
                                     },
                                     style = MaterialTheme.typography.headlineMedium,
@@ -1337,13 +1337,13 @@ private fun SettingsScreen(
                 AppCard {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         SectionHeader(
-                            title = stringResource(R.string.warmup_cooldown),
-                            subtitle = stringResource(R.string.warmup_cooldown_subtitle)
+                            title = stringResource(R.string.warmup),
+                            subtitle = stringResource(R.string.warmup_subtitle)
                         )
                         MetricTile(
-                            label = stringResource(R.string.warmup_cooldown_duration),
+                            label = stringResource(R.string.warmup_duration),
                             value = if (warmupCooldownDurationSec == 0) {
-                                stringResource(R.string.warmup_cooldown_disabled)
+                                stringResource(R.string.warmup_disabled)
                             } else {
                                 formatDurationWords(context, warmupCooldownDurationSec)
                             }
@@ -1658,7 +1658,7 @@ private fun segmentTypeLabel(type: SegmentType): String {
         SegmentType.RUN -> stringResource(R.string.running)
         SegmentType.WALK -> stringResource(R.string.walking)
         SegmentType.WARMUP -> stringResource(R.string.warmup)
-        SegmentType.COOLDOWN -> stringResource(R.string.cooldown)
+        SegmentType.COOLDOWN -> stringResource(R.string.walking)
     }
 }
 
