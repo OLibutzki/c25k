@@ -1238,8 +1238,8 @@ private fun WorkoutDetailScaffold(
 @Composable
 private fun RouteMap(points: List<TrackPointModel>) {
     val context = LocalContext.current
-    val runColor = MaterialTheme.colorScheme.primary.toArgb()
-    val walkColor = MaterialTheme.colorScheme.secondary.toArgb()
+    val runColor = Color(0xFFFF3B30).toArgb()
+    val walkColor = Color(0xFF00C853).toArgb()
     val mapView = remember {
         Configuration.getInstance().userAgentValue = context.packageName
         MapView(context).apply {
@@ -1256,26 +1256,18 @@ private fun RouteMap(points: List<TrackPointModel>) {
         factory = { mapView },
         update = { view ->
             view.overlays.clear()
-            val runPoints = points.filter { it.segmentType == SegmentType.RUN }
-                .map { GeoPoint(it.latitude, it.longitude) }
-            val walkPoints = points.filter { it.segmentType == SegmentType.WALK }
-                .map { GeoPoint(it.latitude, it.longitude) }
-
-            if (runPoints.size >= 2) {
-                val runLine = Polyline().apply {
-                    setPoints(runPoints)
-                    outlinePaint.color = runColor
+            segmentRoutePolylines(points).forEach { segmentPoints ->
+                val lineColor = when (segmentPoints.first().segmentType) {
+                    SegmentType.RUN -> runColor
+                    SegmentType.WALK -> walkColor
+                    else -> walkColor
+                }
+                val line = Polyline().apply {
+                    setPoints(segmentPoints.map { GeoPoint(it.latitude, it.longitude) })
+                    outlinePaint.color = lineColor
                     outlinePaint.strokeWidth = 8f
                 }
-                view.overlays.add(runLine)
-            }
-            if (walkPoints.size >= 2) {
-                val walkLine = Polyline().apply {
-                    setPoints(walkPoints)
-                    outlinePaint.color = walkColor
-                    outlinePaint.strokeWidth = 8f
-                }
-                view.overlays.add(walkLine)
+                view.overlays.add(line)
             }
             points.firstOrNull()?.let { first ->
                 view.controller.setCenter(GeoPoint(first.latitude, first.longitude))
@@ -1621,6 +1613,16 @@ private fun planStatusLabel(session: PlanSessionModel, isNext: Boolean): String 
         session.status == PlanSessionStatus.COMPLETED -> stringResource(R.string.status_completed)
         else -> stringResource(R.string.status_pending)
     }
+}
+
+private fun segmentRoutePolylines(points: List<TrackPointModel>): List<List<TrackPointModel>> {
+    if (points.size < 2) return emptyList()
+
+    return points
+        .sortedWith(compareBy<TrackPointModel> { it.timestampEpochMs }.thenBy { it.segmentOrder })
+        .groupBy { it.segmentOrder }
+        .values
+        .filter { it.size >= 2 }
 }
 
 @Composable
