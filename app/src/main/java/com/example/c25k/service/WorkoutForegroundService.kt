@@ -11,6 +11,7 @@ import android.content.pm.ApplicationInfo
 import android.location.Location
 import android.os.Build
 import android.os.IBinder
+import android.os.SystemClock
 import android.text.format.DateUtils
 import androidx.core.app.NotificationCompat
 import com.example.c25k.C25kApplication
@@ -49,6 +50,9 @@ class WorkoutForegroundService : Service() {
 
     private var planSession: PlanSessionModel? = null
     private var startedAtEpochMs: Long = 0L
+    private var startedAtElapsedRealtimeMs: Long = 0L
+    private var pausedAccumulatedMs: Long = 0L
+    private var pausedAtElapsedRealtimeMs: Long? = null
     private var elapsedSec: Long = 0L
     private var currentSegmentOrder: Int = 0
     private var remainingSec: Int = 0
@@ -121,6 +125,9 @@ class WorkoutForegroundService : Service() {
     private fun resetRuntime(session: PlanSessionModel) {
         planSession = session
         startedAtEpochMs = System.currentTimeMillis()
+        startedAtElapsedRealtimeMs = SystemClock.elapsedRealtime()
+        pausedAccumulatedMs = 0L
+        pausedAtElapsedRealtimeMs = null
         elapsedSec = 0L
         currentSegmentOrder = 0
         remainingSec = session.segments.firstOrNull()?.durationSec ?: 0
@@ -139,38 +146,37 @@ class WorkoutForegroundService : Service() {
     private fun startTimerLoop() {
         timerJob?.cancel()
         timerJob = serviceScope.launch {
+            syncRuntimeFromClock()
             while (true) {
                 if (paused) {
                     delay(200L)
                     continue
                 }
 
-                delay(1000L)
-                elapsedSec += 1
-                if (currentSegmentTracked()) {
-                    if (currentType() == SegmentType.RUN) runDurationSec += 1 else walkDurationSec += 1
+                val previousElapsedSec = elapsedSec
+                val previousSegmentOrder = currentSegmentOrder
+                val previousRemainingSec = remainingSec
+
+                syncRuntimeFromClock()
+                if (isWorkoutComplete()) {
+                    finishWorkout()
+                    return@launch
                 }
 
-                if (remainingSec == 10) {
+                if (previousRemainingSec > 10 && remainingSec <= 10) {
                     if (hasNextSegment()) {
-                        announcePrepareCue()
+                        serviceScope.launch { announcePrepareCue() }
                     } else if (currentSegmentTracked()) {
-                        announceWorkoutEndingSoonCue()
+                        serviceScope.launch { announceWorkoutEndingSoonCue() }
                     }
                 }
 
-                remainingSec -= 1
-                if (remainingSec <= 0) {
-                    if (hasNextSegment()) {
-                        currentSegmentOrder += 1
-                        remainingSec = currentDuration()
-                        speakTransitionCue()
-                    } else {
-                        finishWorkout()
-                        return@launch
-                    }
+                if (currentSegmentOrder != previousSegmentOrder && elapsedSec != previousElapsedSec) {
+                    serviceScope.launch { speakTransitionCue() }
                 }
+
                 publishState(WorkoutStatus.RUNNING)
+                delay(delayUntilNextTickMs())
             }
         }
     }
@@ -222,13 +228,17 @@ class WorkoutForegroundService : Service() {
 
     private fun pauseWorkout() {
         if (WorkoutRuntime.state.value.status != WorkoutStatus.RUNNING) return
+        pausedAtElapsedRealtimeMs = SystemClock.elapsedRealtime()
         paused = true
         publishState(WorkoutStatus.PAUSED)
     }
 
     private fun resumeWorkout() {
         if (WorkoutRuntime.state.value.status != WorkoutStatus.PAUSED) return
+        pausedAtElapsedRealtimeMs?.let { pausedAccumulatedMs += SystemClock.elapsedRealtime() - it }
+        pausedAtElapsedRealtimeMs = null
         paused = false
+        syncRuntimeFromClock()
         publishState(WorkoutStatus.RUNNING)
     }
 
@@ -460,6 +470,73 @@ class WorkoutForegroundService : Service() {
     private fun hasNextSegment(): Boolean {
         val session = planSession ?: return false
         return currentSegmentOrder < session.segments.lastIndex
+    }
+
+    private fun syncRuntimeFromClock() {
+        val session = planSession ?: return
+        val totalDurationSec = session.segments.sumOf { it.durationSec }.toLong()
+        val activeElapsedMs = currentActiveElapsedMs()
+        val newElapsedSec = (activeElapsedMs / 1000L).coerceAtMost(totalDurationSec)
+
+        elapsedSec = newElapsedSec
+        val durations = trackedDurationsAt(newElapsedSec)
+        runDurationSec = durations.first
+        walkDurationSec = durations.second
+
+        if (newElapsedSec >= totalDurationSec) {
+            currentSegmentOrder = session.segments.lastIndex
+            remainingSec = 0
+            return
+        }
+
+        var consumedSec = 0L
+        session.segments.forEachIndexed { index, segment ->
+            val segmentEndSec = consumedSec + segment.durationSec
+            if (newElapsedSec < segmentEndSec) {
+                currentSegmentOrder = index
+                remainingSec = (segmentEndSec - newElapsedSec).toInt()
+                return
+            }
+            consumedSec = segmentEndSec
+        }
+    }
+
+    private fun currentActiveElapsedMs(): Long {
+        val pausedAt = pausedAtElapsedRealtimeMs
+        val now = pausedAt ?: SystemClock.elapsedRealtime()
+        return (now - startedAtElapsedRealtimeMs - pausedAccumulatedMs).coerceAtLeast(0L)
+    }
+
+    private fun trackedDurationsAt(elapsedSec: Long): Pair<Long, Long> {
+        val session = planSession ?: return 0L to 0L
+        var remainingElapsed = elapsedSec
+        var runElapsed = 0L
+        var walkElapsed = 0L
+
+        for (segment in session.segments) {
+            if (remainingElapsed <= 0L) break
+            val segmentElapsed = minOf(segment.durationSec.toLong(), remainingElapsed)
+            if (segment.countsTowardWorkout) {
+                if (segment.type == SegmentType.RUN) {
+                    runElapsed += segmentElapsed
+                } else if (segment.type == SegmentType.WALK) {
+                    walkElapsed += segmentElapsed
+                }
+            }
+            remainingElapsed -= segmentElapsed
+        }
+
+        return runElapsed to walkElapsed
+    }
+
+    private fun isWorkoutComplete(): Boolean {
+        val session = planSession ?: return false
+        return elapsedSec >= session.segments.sumOf { it.durationSec }.toLong()
+    }
+
+    private fun delayUntilNextTickMs(): Long {
+        val remainderMs = currentActiveElapsedMs() % 1000L
+        return (1000L - remainderMs).coerceIn(50L, 1000L)
     }
 
     override fun onDestroy() {
