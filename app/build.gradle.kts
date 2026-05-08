@@ -46,7 +46,7 @@ val hasReleaseSigningConfig = listOf(
 ).all { !it.isNullOrBlank() }
 
 android {
-    namespace = "com.example.c25k"
+    namespace = "de.libutzki.c25k"
     compileSdk = 34
 
     defaultConfig {

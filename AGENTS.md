@@ -21,14 +21,14 @@
 - Local-only persistence (Room), no backend.
 
 ## Key Files
-- App entry: `app/src/main/java/com/example/c25k/MainActivity.kt`
-- App wiring: `app/src/main/java/com/example/c25k/AppContainer.kt`
-- Service runtime: `app/src/main/java/com/example/c25k/service/WorkoutForegroundService.kt`
-- UI screens: `app/src/main/java/com/example/c25k/ui/C25kApp.kt`
-- Persistence: `app/src/main/java/com/example/c25k/data/*`
+- App entry: `app/src/main/java/de/libutzki/c25k/MainActivity.kt`
+- App wiring: `app/src/main/java/de/libutzki/c25k/AppContainer.kt`
+- Service runtime: `app/src/main/java/de/libutzki/c25k/service/WorkoutForegroundService.kt`
+- UI screens: `app/src/main/java/de/libutzki/c25k/ui/C25kApp.kt`
+- Persistence: `app/src/main/java/de/libutzki/c25k/data/*`
 - Migration guide: `docs/database-migrations.md`
-- Exported Room schemas: `app/schemas/com.example.c25k.data.AppDatabase/*`
-- Warm-up/cooldown setting: `app/src/main/java/com/example/c25k/settings/WarmupCooldownRepository.kt`
+- Exported Room schemas: `app/schemas/de.libutzki.c25k.data.AppDatabase/*`
+- Warm-up/cooldown setting: `app/src/main/java/de/libutzki/c25k/settings/WarmupCooldownRepository.kt`
 - Localization: `app/src/main/res/values/strings.xml`, `app/src/main/res/values-de/strings.xml`
 
 ## Environment/Build Notes (CLI Only)
