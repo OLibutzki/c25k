@@ -567,13 +567,16 @@ private fun PlanSessionCard(
 
 @Composable
 private fun SessionSegmentPreview(session: PlanSessionModel) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         items(
-            items = session.segments.take(4),
+            items = session.segments,
             key = { segment -> segment.segmentOrder }
         ) { segment ->
             Surface(
-                modifier = Modifier.width(86.dp),
+                modifier = Modifier.width(92.dp),
                 color = if (segment.type == SegmentType.RUN) {
                     MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                 } else {
