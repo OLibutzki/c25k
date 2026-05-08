@@ -25,13 +25,26 @@ ANDROID_SDK_ROOT=/your/path ./scripts/setup_android_sdk.sh
 Then build:
 ```bash
 cd /mnt/c/Entwicklung/playground/codex/c25k
-GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleDebug
+GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleDevDebug
+```
+
+For the parallel-installable test build, use:
+```bash
+cd /mnt/c/Entwicklung/playground/codex/c25k
+GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleDevDebug
+adb install -r app/build/outputs/apk/dev/debug/app-dev-debug.apk
+```
+
+For the store package, use the `prod` flavor:
+```bash
+cd /mnt/c/Entwicklung/playground/codex/c25k
+GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleProdRelease -PreleaseVersionName=0.1.0
 ```
 
 ## Release workflow
 - Official release tags use plain SemVer without a prefix, for example `0.1.0`.
 - Releases are published manually from GitHub Actions after the tag already exists.
-- The release workflow builds a signed `release` APK from the selected tag and uploads it to a GitHub Release.
+- The release workflow builds a signed `prodRelease` APK from the selected tag and uploads it to a GitHub Release.
 
 ### One-time signing setup
 Create a release keystore once and keep it outside git:
@@ -59,7 +72,7 @@ keyPassword=your-key-password
 
 ```bash
 cd /mnt/c/Entwicklung/playground/codex/c25k
-GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleRelease -PreleaseVersionName=0.1.0
+GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleProdRelease -PreleaseVersionName=0.1.0
 ```
 
 ### GitHub Actions secrets
@@ -79,7 +92,7 @@ base64 -w 0 c25k-release.keystore
 1. Verify the app locally:
    ```bash
    cd /mnt/c/Entwicklung/playground/codex/c25k
-   GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleDebug testDebugUnitTest
+   GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleDevDebug assembleProdRelease testDevDebugUnitTest testProdDebugUnitTest
    ```
 2. Create and push the release tag:
    ```bash
@@ -91,7 +104,14 @@ base64 -w 0 c25k-release.keystore
 5. After the workflow succeeds, download `c25k-coach-0.1.0.apk` from the GitHub Release.
 
 ### Install or update on your device
-If your wireless `adb` device is already connected:
+If your wireless `adb` device is already connected and you want the local test build alongside the published app:
+
+```bash
+adb install -r app/build/outputs/apk/dev/debug/app-dev-debug.apk
+adb shell pm list packages | grep com.example.c25k.dev
+```
+
+For a signed release APK you downloaded from GitHub Releases:
 
 ```bash
 adb install -r c25k-coach-0.1.0.apk

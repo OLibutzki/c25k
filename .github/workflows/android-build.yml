@@ -35,21 +35,21 @@ jobs:
       - name: Ensure Gradle wrapper is executable
         run: chmod +x gradlew
 
-      - name: Build debug APK
+      - name: Build dev debug APK
         env:
           GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
-        run: ./gradlew --no-daemon assembleDebug -Dorg.gradle.java.home="$JAVA_HOME"
+        run: ./gradlew --no-daemon assembleDevDebug -Dorg.gradle.java.home="$JAVA_HOME"
 
       - name: Run unit tests
         env:
           GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
-        run: ./gradlew --no-daemon testDebugUnitTest -Dorg.gradle.java.home="$JAVA_HOME"
+        run: ./gradlew --no-daemon testDevDebugUnitTest testProdDebugUnitTest -Dorg.gradle.java.home="$JAVA_HOME"
 
-      - name: Upload debug APK
+      - name: Upload dev debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: app-dev-debug-apk
+          path: app/build/outputs/apk/dev/debug/app-dev-debug.apk
           if-no-files-found: error
 
       - name: Upload unit test reports
@@ -57,5 +57,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-reports
-          path: app/build/reports/tests/testDebugUnitTest
+          path: |
+            app/build/reports/tests/testDevDebugUnitTest
+            app/build/reports/tests/testProdDebugUnitTest
           if-no-files-found: warn

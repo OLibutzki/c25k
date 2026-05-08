@@ -78,16 +78,16 @@ jobs:
       - name: Run unit tests
         env:
           GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
-        run: ./gradlew --no-daemon testDebugUnitTest -Dorg.gradle.java.home="$JAVA_HOME"
+        run: ./gradlew --no-daemon testProdDebugUnitTest -Dorg.gradle.java.home="$JAVA_HOME"
 
-      - name: Build signed release APK
+      - name: Build signed prod release APK
         env:
           GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
-          ./gradlew --no-daemon assembleRelease \
+          ./gradlew --no-daemon assembleProdRelease \
             -Dorg.gradle.java.home="$JAVA_HOME" \
             -PreleaseVersionName="${{ inputs.git_tag }}" \
             -PreleaseStoreFile="$RUNNER_TEMP/release.keystore"
@@ -95,7 +95,7 @@ jobs:
       - name: Prepare release asset
         env:
           GIT_TAG: ${{ inputs.git_tag }}
-        run: cp app/build/outputs/apk/release/app-release.apk "c25k-coach-$GIT_TAG.apk"
+        run: cp app/build/outputs/apk/prod/release/app-prod-release.apk "c25k-coach-$GIT_TAG.apk"
 
       - name: Fail if GitHub Release already exists
         env:
@@ -122,5 +122,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-reports-release-${{ inputs.git_tag }}
-          path: app/build/reports/tests/testDebugUnitTest
+          path: app/build/reports/tests/testProdDebugUnitTest
           if-no-files-found: warn

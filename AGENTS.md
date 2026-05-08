@@ -38,31 +38,36 @@
 - Android SDK setup script:
   - `./scripts/setup_android_sdk.sh`
 - SDK path is written to `local.properties` (machine-specific; do not commit blindly).
-- `assembleDebug` may fail inside the sandbox with `Could not determine a usable wildcard IP for this machine`; rerun outside the sandbox if that happens.
+- `assembleDevDebug`, `assembleProdRelease`, or test tasks may fail inside the sandbox with `Could not determine a usable wildcard IP for this machine`; rerun outside the sandbox if that happens.
 
 ## Verified Commands
-- Build: `GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleDebug`
-- Unit tests: `GRADLE_USER_HOME=$PWD/.gradle ./gradlew testDebugUnitTest`
-- Last verified result: both commands succeeded.
+- Dev build: `GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleDevDebug`
+- Prod release build: `GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleProdRelease`
+- Unit tests: `GRADLE_USER_HOME=$PWD/.gradle ./gradlew testProdDebugUnitTest testDevDebugUnitTest`
+- Last verified result: all three commands succeeded.
 - APK output:
-  - `app/build/outputs/apk/debug/app-debug.apk`
+  - Dev debug: `app/build/outputs/apk/dev/debug/app-dev-debug.apk`
+  - Prod release: `app/build/outputs/apk/prod/release/app-prod-release-unsigned.apk` unless release signing is configured
 
 ## Device Install Workflow
 - Preferred install method for manual testing is wireless `adb` to the user's physical device.
-- Do not assume an existing APK artifact is current; rebuild with `GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleDebug` before installing unless the user explicitly asks to reuse an existing build.
-- Prefer installing the freshly built APK with `adb install -r app/build/outputs/apk/debug/app-debug.apk` to an already paired and connected wireless device.
+- Do not assume an existing APK artifact is current; rebuild with `GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleDevDebug` before installing unless the user explicitly asks to reuse an existing build.
+- Prefer installing the freshly built Dev APK with `adb install -r app/build/outputs/apk/dev/debug/app-dev-debug.apk` to an already paired and connected wireless device when the goal is side-by-side testing with the published app.
 - Keep device-specific connection details ephemeral: do not write pairing codes, IP addresses, ports, or other credentials into repository files, including `AGENTS.md`.
 - If the wireless device is not currently connected, ask the user for the current Wireless debugging pairing/connect details and use those only for the current session.
-- After installing, verify the package is present on-device (`com.example.c25k`) before reporting success.
+- After installing, verify the package is present on-device:
+  - Dev app: `com.example.c25k.dev`
+  - Published/prod app: `com.example.c25k`
 
 ## Verification Rules
 - Before `git commit` or `git push`, use judgment instead of running verification by default.
 - Run the repository's standard verification when the change could plausibly break the build, tests, packaging, resources, manifests, dependency graph, generated code, or affected call sites.
 - Small documentation-only or clearly isolated non-build-affecting changes do not require rerunning the full verification suite before commit.
 - For Android code changes in this repo, the minimum required verification is:
-  - `GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleDebug`
-  - `GRADLE_USER_HOME=$PWD/.gradle ./gradlew testDebugUnitTest`
-- `:app:compileDebugKotlin` alone is not sufficient to claim a change is verified.
+  - `GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleDevDebug`
+  - `GRADLE_USER_HOME=$PWD/.gradle ./gradlew assembleProdRelease`
+  - `GRADLE_USER_HOME=$PWD/.gradle ./gradlew testProdDebugUnitTest testDevDebugUnitTest`
+- `:app:compileDevDebugKotlin` or `:app:compileProdDebugKotlin` alone is not sufficient to claim a change is verified.
 - If Gradle fails in the sandbox with `Could not determine a usable wildcard IP for this machine`, rerun the same verification outside the sandbox before finishing.
 - If a change modifies a shared model, constructor, data class, DAO contract, or repository API, update all affected call sites, including tests.
 - If a change modifies the Room schema, increment `AppDatabase` version, add an explicit migration, regenerate `app/schemas/`, and verify the upgrade path before release.

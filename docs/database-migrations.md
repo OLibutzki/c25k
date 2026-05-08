@@ -15,7 +15,7 @@
 1. Modify entities, DAO contracts, or converters.
 2. Increase `AppDatabase` version.
 3. Add a `Migration(startVersion, endVersion)` in `DatabaseMigrations.kt`.
-4. Run `assembleDebug` to generate the new schema JSON in `app/schemas/`.
+4. Run `assembleDevDebug` to generate the new schema JSON in `app/schemas/`.
 5. Add or update a migration test that upgrades from the previous schema to the new one.
 6. Only release after the migration path succeeds on an existing database.
 
