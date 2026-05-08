@@ -296,7 +296,6 @@ private fun HomeScreen(
             items(items = displaySessions, key = { it.id }) { session ->
                 PlanSessionCard(
                     session = session,
-                    isNext = nextSession?.id == session.id,
                     onStartWorkout = { onStartWorkout(session.id) }
                 )
             }
@@ -519,41 +518,28 @@ private fun SummaryMetric(label: String, value: String, modifier: Modifier = Mod
 @Composable
 private fun PlanSessionCard(
     session: PlanSessionModel,
-    isNext: Boolean,
     onStartWorkout: () -> Unit
 ) {
     val context = LocalContext.current
-    val statusColor = planStatusColor(session.status, isNext)
     val runDuration = session.segments.filter { it.type == SegmentType.RUN }.sumOf { it.durationSec }
     val totalDuration = session.segments.sumOf { it.durationSec }
 
     AppCard {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = stringResource(R.string.week_day_format, session.week, session.day),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = stringResource(
-                            R.string.plan_session_summary,
-                            formatDurationWords(context, runDuration),
-                            formatDurationWords(context, totalDuration)
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                StatusBadge(
-                    label = planStatusLabel(session = session, isNext = isNext),
-                    color = statusColor.copy(alpha = 0.14f),
-                    contentColor = statusColor
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = stringResource(R.string.week_day_format, session.week, session.day),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = stringResource(
+                        R.string.plan_session_summary,
+                        formatDurationWords(context, runDuration),
+                        formatDurationWords(context, totalDuration)
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -581,10 +567,13 @@ private fun PlanSessionCard(
 
 @Composable
 private fun SessionSegmentPreview(session: PlanSessionModel) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        session.segments.take(4).forEach { segment ->
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(
+            items = session.segments.take(4),
+            key = { segment -> segment.segmentOrder }
+        ) { segment ->
             Surface(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.width(86.dp),
                 color = if (segment.type == SegmentType.RUN) {
                     MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                 } else {
@@ -611,12 +600,14 @@ private fun SessionSegmentPreview(session: PlanSessionModel) {
                     )
                     Text(
                         text = segmentTypeLabel(segment.type),
-                        style = MaterialTheme.typography.labelSmall
+                        style = MaterialTheme.typography.labelSmall,
+                        textAlign = TextAlign.Center
                     )
                     Text(
                         text = formatShortDuration(segment.durationSec),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
                     )
                 }
             }
@@ -1606,15 +1597,6 @@ private fun AppScaffold(
     )
 }
 
-@Composable
-private fun planStatusLabel(session: PlanSessionModel, isNext: Boolean): String {
-    return when {
-        isNext && session.status == PlanSessionStatus.PENDING -> stringResource(R.string.status_up_next)
-        session.status == PlanSessionStatus.COMPLETED -> stringResource(R.string.status_completed)
-        else -> stringResource(R.string.status_pending)
-    }
-}
-
 private fun segmentRoutePolylines(points: List<TrackPointModel>): List<List<TrackPointModel>> {
     if (points.size < 2) return emptyList()
 
@@ -1632,15 +1614,6 @@ private fun workoutStatusLabel(status: WorkoutStatus): String {
         WorkoutStatus.RUNNING -> stringResource(R.string.status_running)
         WorkoutStatus.PAUSED -> stringResource(R.string.status_paused)
         WorkoutStatus.COMPLETED -> stringResource(R.string.status_completed_workout)
-    }
-}
-
-@Composable
-private fun planStatusColor(status: PlanSessionStatus, isNext: Boolean): Color {
-    return when {
-        isNext && status == PlanSessionStatus.PENDING -> MaterialTheme.colorScheme.primary
-        status == PlanSessionStatus.COMPLETED -> MaterialTheme.colorScheme.tertiary
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 }
 
