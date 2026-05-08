@@ -1698,9 +1698,5 @@ private fun formatDurationWords(context: Context, totalSec: Int): String {
 private fun formatShortDuration(totalSec: Int): String {
     val minutes = totalSec / 60
     val seconds = totalSec % 60
-    return if (minutes > 0) {
-        "${minutes}m"
-    } else {
-        "${seconds}s"
-    }
+    return String.format(Locale.ROOT, "%d:%02d", minutes, seconds)
 }
