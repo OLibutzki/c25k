@@ -72,6 +72,11 @@
 - If a change modifies a shared model, constructor, data class, DAO contract, or repository API, update all affected call sites, including tests.
 - If a change modifies the Room schema, increment `AppDatabase` version, add an explicit migration, regenerate `app/schemas/`, and verify the upgrade path before release.
 
+## Git Workflow Notes
+- Do not run write-oriented Git commands in parallel in this repo. In particular, never overlap `git add`, `git commit`, `git merge`, `git rebase`, `git cherry-pick`, or similar commands that update the index or refs.
+- If Git reports `.git/index.lock`, first check whether another Git process is still running and wait or retry once before assuming the lock is stale.
+- Remove a stale `.git/index.lock` only after confirming no other Git process is active in this repository.
+
 ## Important Constraints / Decisions
 - MapLibre was replaced with osmdroid due to repository resolution issues in this environment.
 - No cloud sync/export in v1.
