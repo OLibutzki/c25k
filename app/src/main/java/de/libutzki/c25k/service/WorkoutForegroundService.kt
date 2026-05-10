@@ -246,7 +246,10 @@ class WorkoutForegroundService : Service() {
         serviceScope.launch {
             val app = application as C25kApplication
             val session = planSession ?: return@launch
-            ttsCoach.speak(app.container.cueFormatter.completeCue())
+            val language = app.container.languageRepository.getLanguage()
+            app.applyLocale(language)
+            ttsCoach.setLanguage(language)
+            ttsCoach.speakAndWait(app.container.cueFormatter.completeCue())
 
             val segments = session.segments
                 .filter { session.isTrackedSegment(it.segmentOrder) }
