@@ -62,7 +62,9 @@ data class WorkoutSummary(
     val startedAtEpochMs: Long,
     val completedAtEpochMs: Long,
     val distanceMeters: Double,
-    val avgPaceSecPerKm: Double?
+    val avgPaceSecPerKm: Double?,
+    val runPaceSecPerKm: Double?,
+    val walkPaceSecPerKm: Double?
 )
 
 data class SegmentStats(

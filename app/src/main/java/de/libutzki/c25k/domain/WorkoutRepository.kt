@@ -14,6 +14,8 @@ data class WorkoutPersistRequest(
     val completedAtEpochMs: Long,
     val distanceMeters: Double,
     val avgPaceSecPerKm: Double?,
+    val runPaceSecPerKm: Double?,
+    val walkPaceSecPerKm: Double?,
     val segments: List<SegmentStats>,
     val points: List<TrackPointCapture>
 )
@@ -55,7 +57,9 @@ class WorkoutRepository(
                     startedAtEpochMs = it.startedAtEpochMs,
                     completedAtEpochMs = it.completedAtEpochMs,
                     distanceMeters = it.distanceMeters,
-                    avgPaceSecPerKm = it.avgPaceSecPerKm
+                    avgPaceSecPerKm = it.avgPaceSecPerKm,
+                    runPaceSecPerKm = it.runPaceSecPerKm,
+                    walkPaceSecPerKm = it.walkPaceSecPerKm
                 )
             }
         }
@@ -69,7 +73,9 @@ class WorkoutRepository(
                     startedAtEpochMs = request.startedAtEpochMs,
                     completedAtEpochMs = request.completedAtEpochMs,
                     distanceMeters = request.distanceMeters,
-                    avgPaceSecPerKm = request.avgPaceSecPerKm
+                    avgPaceSecPerKm = request.avgPaceSecPerKm,
+                    runPaceSecPerKm = request.runPaceSecPerKm,
+                    walkPaceSecPerKm = request.walkPaceSecPerKm
                 )
             )
 
@@ -144,7 +150,9 @@ class WorkoutRepository(
                 startedAtEpochMs = workout.startedAtEpochMs,
                 completedAtEpochMs = workout.completedAtEpochMs,
                 distanceMeters = workout.distanceMeters,
-                avgPaceSecPerKm = workout.avgPaceSecPerKm
+                avgPaceSecPerKm = workout.avgPaceSecPerKm,
+                runPaceSecPerKm = workout.runPaceSecPerKm,
+                walkPaceSecPerKm = workout.walkPaceSecPerKm
             ),
             segments = segments,
             points = points

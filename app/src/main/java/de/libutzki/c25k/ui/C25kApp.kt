@@ -516,6 +516,41 @@ private fun SummaryMetric(label: String, value: String, modifier: Modifier = Mod
 }
 
 @Composable
+private fun WorkoutPaceSummary(
+    distanceMeters: Double,
+    avgPaceSecPerKm: Double?,
+    runPaceSecPerKm: Double?,
+    walkPaceSecPerKm: Double?
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SummaryMetric(
+                label = stringResource(R.string.distance),
+                value = formatDistanceKm(distanceMeters),
+                modifier = Modifier.weight(1f)
+            )
+            SummaryMetric(
+                label = stringResource(R.string.avg_pace_label),
+                value = formatPace(avgPaceSecPerKm),
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SummaryMetric(
+                label = stringResource(R.string.run_pace_label),
+                value = formatPace(runPaceSecPerKm),
+                modifier = Modifier.weight(1f)
+            )
+            SummaryMetric(
+                label = stringResource(R.string.walk_pace_label),
+                value = formatPace(walkPaceSecPerKm),
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
 private fun PlanSessionCard(
     session: PlanSessionModel,
     onStartWorkout: () -> Unit
@@ -985,18 +1020,12 @@ private fun WorkoutHistoryCard(item: WorkoutSummary, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SummaryMetric(
-                    label = stringResource(R.string.distance),
-                    value = formatDistanceKm(item.distanceMeters),
-                    modifier = Modifier.weight(1f)
-                )
-                SummaryMetric(
-                    label = stringResource(R.string.avg_pace_label),
-                    value = formatPace(item.avgPaceSecPerKm),
-                    modifier = Modifier.weight(1f)
-                )
-            }
+            WorkoutPaceSummary(
+                distanceMeters = item.distanceMeters,
+                avgPaceSecPerKm = item.avgPaceSecPerKm,
+                runPaceSecPerKm = item.runPaceSecPerKm,
+                walkPaceSecPerKm = item.walkPaceSecPerKm
+            )
         }
     }
 }
@@ -1104,18 +1133,12 @@ private fun WorkoutDetailScaffold(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                SummaryMetric(
-                                    label = stringResource(R.string.distance),
-                                    value = formatDistanceKm(current.workout.distanceMeters),
-                                    modifier = Modifier.weight(1f)
-                                )
-                                SummaryMetric(
-                                    label = stringResource(R.string.avg_pace_label),
-                                    value = formatPace(current.workout.avgPaceSecPerKm),
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
+                            WorkoutPaceSummary(
+                                distanceMeters = current.workout.distanceMeters,
+                                avgPaceSecPerKm = current.workout.avgPaceSecPerKm,
+                                runPaceSecPerKm = current.workout.runPaceSecPerKm,
+                                walkPaceSecPerKm = current.workout.walkPaceSecPerKm
+                            )
                         }
                     }
                 }

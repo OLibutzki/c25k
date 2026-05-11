@@ -39,6 +39,8 @@ class WorkoutRepositoryTest {
         assertEquals(7L, history[0].sessionId)
         assertEquals(3, history[0].week)
         assertEquals(1, history[0].day)
+        assertEquals(300.0, history[0].runPaceSecPerKm)
+        assertEquals(480.0, history[0].walkPaceSecPerKm)
         assertEquals(1L, history[1].sessionId)
         assertEquals(WorkoutSummary::class, history[0]::class)
 
@@ -78,6 +80,8 @@ class WorkoutRepositoryTest {
         completedAtEpochMs = completedAt,
         distanceMeters = 1_000.0,
         avgPaceSecPerKm = 360.0,
+        runPaceSecPerKm = 300.0,
+        walkPaceSecPerKm = 480.0,
         segments = listOf(
             SegmentStats(
                 segmentOrder = 0,

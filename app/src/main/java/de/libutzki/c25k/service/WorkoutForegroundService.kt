@@ -275,6 +275,8 @@ class WorkoutForegroundService : Service() {
                 completedAtEpochMs = System.currentTimeMillis(),
                 distanceMeters = totalDistanceMeters,
                 avgPaceSecPerKm = WorkoutMath.paceSecPerKm(totalDistanceMeters, trackedElapsedSec),
+                runPaceSecPerKm = WorkoutMath.paceSecPerKm(runDistanceMeters, runDurationSec),
+                walkPaceSecPerKm = WorkoutMath.paceSecPerKm(walkDistanceMeters, walkDurationSec),
                 segments = segments,
                 points = pointCaptures.toList()
             )
